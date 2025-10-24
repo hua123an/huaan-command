@@ -1,0 +1,50 @@
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <!-- 纯色背景 -->
+  <rect width="512" height="512" rx="115" fill="#007AFF"/>
+  
+  <!-- 终端窗口 -->
+  <g transform="translate(96, 128)">
+    <!-- 窗口背景 -->
+    <rect width="320" height="256" rx="16" fill="#ffffff"/>
+    
+    <!-- 窗口顶部栏 -->
+    <rect width="320" height="40" rx="16" fill="#F2F2F7"/>
+    <rect y="40" width="320" height="16" fill="#F2F2F7"/>
+    
+    <!-- 窗口控制按钮 -->
+    <circle cx="24" cy="20" r="6" fill="#FF3B30"/>
+    <circle cx="48" cy="20" r="6" fill="#FFCC00"/>
+    <circle cx="72" cy="20" r="6" fill="#30D158"/>
+    
+    <!-- 终端提示符 -->
+    <text x="24" y="90" font-family="SF Mono, Monaco, monospace" font-size="24" fill="#007AFF" font-weight="bold">❯</text>
+    
+    <!-- 光标 -->
+    <rect x="40" y="72" width="12" height="24" fill="#007AFF">
+      <animate attributeName="opacity" values="1;0.3;1" dur="1.5s" repeatCount="indefinite"/>
+    </rect>
+    
+    <!-- 代码行 - 使用纯色 -->
+    <text x="24" y="135" font-family="SF Mono, Monaco, monospace" font-size="18" fill="#000000">npm run dev</text>
+    <text x="24" y="165" font-family="SF Mono, Monaco, monospace" font-size="18" fill="#000000">cargo build</text>
+    <text x="24" y="195" font-family="SF Mono, Monaco, monospace" font-size="18" fill="#000000">git commit</text>
+    
+    <!-- AI 符号 - 简化设计 -->
+    <g transform="translate(260, 180)">
+      <!-- AI 图标背景 -->
+      <circle cx="0" cy="0" r="24" fill="#007AFF" opacity="0.1"/>
+      <!-- AI 简化图标 -->
+      <circle cx="-8" cy="-4" r="3" fill="#007AFF"/>
+      <circle cx="8" cy="-4" r="3" fill="#007AFF"/>
+      <circle cx="0" cy="8" r="3" fill="#007AFF"/>
+      <line x1="-8" y1="-4" x2="0" y2="8" stroke="#007AFF" stroke-width="2"/>
+      <line x1="8" y1="-4" x2="0" y2="8" stroke="#007AFF" stroke-width="2"/>
+      <line x1="-8" y1="-4" x2="8" y2="-4" stroke="#007AFF" stroke-width="2"/>
+    </g>
+  </g>
+  
+  <!-- 装饰元素：简化代码符号 -->
+  <text x="50" y="100" font-family="SF Mono, monospace" font-size="36" fill="#ffffff" opacity="0.3" font-weight="bold">&lt;/&gt;</text>
+  <text x="420" y="460" font-family="SF Mono, monospace" font-size="36" fill="#ffffff" opacity="0.3" font-weight="bold">{ }</text>
+</svg>
+

@@ -1,0 +1,36 @@
+{
+  "name": "huaan-command",
+  "private": true,
+  "version": "1.0.0",
+  "description": "智能终端命令管理工具 - 集成 AI 助手的现代化终端",
+  "author": "Huaan",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "tauri": "tauri",
+    "tauri:build": "tauri build",
+    "tauri:build:intel": "tauri build --target x86_64-apple-darwin",
+    "lint": "echo '✅ No linting configured yet'",
+    "test": "echo '✅ No tests configured yet'",
+    "test:integration": "echo '✅ No integration tests configured yet'"
+  },
+  "dependencies": {
+    "@tauri-apps/api": "^2.9.0",
+    "@tauri-apps/plugin-opener": "^2.5.0",
+    "@xterm/addon-fit": "^0.10.0",
+    "@xterm/addon-web-links": "^0.11.0",
+    "@xterm/xterm": "^5.5.0",
+    "openai": "^6.6.0",
+    "pinia": "^3.0.3",
+    "vue": "^3.5.22",
+    "vue-router": "^4.6.3"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2.9.1",
+    "@vitejs/plugin-vue": "^5.2.1",
+    "vite": "^6.0.3"
+  }
+}

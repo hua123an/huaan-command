@@ -125,7 +125,7 @@ $ /ai 熟悉这个项目
 - AI Agent：5.5 秒
 - **提升：600 倍！** 🚀
 
-👉 [🚀 Warp 模式](./WARP_MODE.md) | [AI Agent 模式](./AI_AGENT_MODE.md) | [终端持久化](./TERMINAL_PERSISTENCE.md) | [AI 功能完整指南](./AI_FEATURES.md) | [服务商配置](./AI_PROVIDERS_GUIDE.md) | [终端 AI 面板](./TERMINAL_AI_GUIDE.md) | [AI 模式使用](./TERMINAL_AI_MODE.md) | [流式输出详解](./STREAMING_GUIDE.md) | [快速开始](./AI_QUICK_START.md)
+👉 [🤖 AI 完整用户指南](./AI_COMPLETE_GUIDE.md) | [🔧 AI 技术参考](./AI_TECHNICAL_REFERENCE.md) | [🖥️ AI 终端集成](./AI_TERMINAL_INTEGRATION.md) | [⚡ 性能优化](./PERFORMANCE_OPTIMIZATION.md) | [✨ 完整功能文档](./FEATURES_COMPLETE.md) | [🛠️ 开发指南](./DEVELOPMENT_GUIDE.md) | [🚀 Warp 模式](./WARP_MODE.md) | [终端持久化](./TERMINAL_PERSISTENCE.md)
 
 ## ✨ 核心特性
 

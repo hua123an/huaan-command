@@ -340,12 +340,22 @@ MIT License - 详见 [LICENSE](LICENSE) 文件
 - [Rust](https://www.rust-lang.org/) - 系统编程语言
 - [Pinia](https://pinia.vuejs.org/) - Vue 状态管理
 
+## 📚 文档
+
+- [🤖 AI Complete User Guide](./AI_COMPLETE_GUIDE.md) - AI 功能完整使用指南
+- [🔧 AI Technical Reference](./AI_TECHNICAL_REFERENCE.md) - AI 技术实现文档
+- [🖥️ AI Terminal Integration](./AI_TERMINAL_INTEGRATION.md) - AI 终端集成详解
+- [⚡ Performance Optimization](./PERFORMANCE_OPTIMIZATION.md) - 性能优化指南
+- [✨ Complete Features Documentation](./FEATURES_COMPLETE.md) - 完整功能文档
+- [🛠️ Development Guide](./DEVELOPMENT_GUIDE.md) - 开发者指南
+- [Warp 模式详解](./WARP_MODE.md) - Warp 模式使用说明
+- [终端持久化](./TERMINAL_PERSISTENCE.md) - 终端会话管理
+
 ## 📞 支持
 
 - 📧 邮箱: support@huaan-command.com
-- 🐛 问题反馈: [GitHub Issues](https://github.com/your-repo/huaan-command/issues)
-- 💬 讨论: [GitHub Discussions](https://github.com/your-repo/huaan-command/discussions)
-- 📖 文档: [在线文档](https://docs.huaan-command.com)
+- 🐛 问题反馈: [GitHub Issues](https://github.com/hua123an/huaan-command/issues)
+- 💬 讨论: [GitHub Discussions](https://github.com/hua123an/huaan-command/discussions)
 
 ---
 

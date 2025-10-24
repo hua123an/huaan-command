@@ -29,7 +29,7 @@
   },
   "bundle": {
     "active": true,
-    "targets": "dmg",
+    "targets": "all",
     "publisher": "Huaan",
     "copyright": "Copyright © 2024 Huaan. All rights reserved.",
     "category": "DeveloperTool",
@@ -48,7 +48,25 @@
       "exceptionDomain": null,
       "signingIdentity": null,
       "hardenedRuntime": true,
-      "frameworks": []
-    }
+      "frameworks": [],
+      "providerShortName": null,
+      "signingIdentity": null
+    },
+    "windows": {
+      "certificateThumbprint": null,
+      "digestAlgorithm": "sha256",
+      "timestampUrl": ""
+    },
+    "linux": {
+      "deb": {
+        "depends": []
+      }
+    },
+    "resources": [],
+    "externalBin": [],
+    "copyright": "",
+    "license": "",
+    "licenseFile": "",
+    "createUpdaterArtifacts": false
   }
 }

@@ -31,6 +31,11 @@ const navigate = (name) => {
       </button>
     </div>
 
+    <!-- 中间应用标题 -->
+    <div class="nav-center">
+      <h1 class="app-title">Huaan Command</h1>
+    </div>
+
     <!-- 右侧设置按钮 -->
     <div class="nav-right">
       <button 
@@ -63,10 +68,31 @@ const navigate = (name) => {
 }
 
 .nav-left,
+.nav-center,
 .nav-right {
   display: flex;
   gap: 10px;
   -webkit-app-region: no-drag;
+}
+
+.nav-center {
+  flex: 1;
+  justify-content: center;
+  align-items: center;
+}
+
+.app-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+  letter-spacing: 0.5px;
+  opacity: 0.9;
+  transition: opacity 0.3s ease;
+}
+
+.app-title:hover {
+  opacity: 1;
 }
 
 .nav-btn {

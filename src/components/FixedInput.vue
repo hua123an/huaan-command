@@ -5,7 +5,8 @@ const props = defineProps({
   mode: String, // 'terminal' | 'ai'
   currentModel: String,
   placeholder: String,
-  disabled: Boolean
+  disabled: Boolean,
+  currentDir: String // 当前目录路径
 })
 
 const emit = defineEmits(['submit', 'update:mode', 'mention-file'])
@@ -199,6 +200,11 @@ defineExpose({
 <template>
   <div class="fixed-input" :class="{ disabled }">
     <div class="input-container">
+      <!-- 当前目录显示 -->
+      <div v-if="mode === 'terminal' && currentDir" class="current-dir">
+        {{ currentDir }}
+      </div>
+      
       <!-- 输入框 -->
       <input
         ref="inputRef"
@@ -260,6 +266,24 @@ defineExpose({
   padding: 8px 12px;
   border: 2px solid var(--border-color);
   transition: all 0.2s;
+}
+
+.current-dir {
+  background: var(--bg-secondary);
+  color: var(--accent-color);
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-family: 'SF Mono', Monaco, monospace;
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.current-dir:hover {
+  background: var(--bg-hover);
+  transform: translateY(-1px);
 }
 
 .input-container:focus-within {

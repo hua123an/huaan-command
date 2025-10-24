@@ -44,6 +44,11 @@ impl TerminalManager {
         // 创建命令
         let mut cmd = CommandBuilder::new(&shell);
         cmd.cwd(std::env::var("HOME").unwrap_or_else(|_| ".".to_string()));
+        
+        // 设置简化的 prompt（仅适用于 bash/zsh）
+        if !cfg!(target_os = "windows") {
+            cmd.env("PS1", "\\$ ");
+        }
 
         // 启动子进程
         let _child = pair.slave.spawn_command(cmd)?;

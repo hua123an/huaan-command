@@ -264,6 +264,7 @@ const handleFileSelect = (file) => {
         ref="inputComponent"
         :mode="warpMode"
         :currentModel="currentModel"
+        :currentDir="currentDir"
         @submit="handleSubmit"
         @update:mode="handleModeUpdate"
         @mention-file="handleMentionFile"

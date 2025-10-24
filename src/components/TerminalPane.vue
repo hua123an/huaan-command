@@ -129,36 +129,9 @@ onMounted(async () => {
     unlisten = await listen(`terminal-output-${props.session.id}`, (event) => {
       terminal.write(event.payload)
       
-      // 尝试从 prompt 中提取当前目录
-      // 匹配格式：user@host directory % 或 user@host directory $
-      // 使用更精确的正则：匹配最后一个空格到 % 或 $ 之间的内容
-      const promptMatch = event.payload.match(/[\w-]+@[\w.-]+ (.+?) [%$](?:\s|$)/);
-      if (promptMatch) {
-        const dirFromPrompt = promptMatch[1].trim()
-        
-        // 处理 ~ 开头的路径
-        if (dirFromPrompt === '~') {
-          invoke('get_home_dir').then(homeDir => {
-            currentDir.value = homeDir
-            console.log('📂 从 prompt 检测到主目录:', homeDir)
-          }).catch(() => {})
-        } else if (dirFromPrompt.startsWith('~/')) {
-          invoke('get_home_dir').then(homeDir => {
-            currentDir.value = dirFromPrompt.replace('~', homeDir)
-            console.log('📂 从 prompt 检测到目录:', currentDir.value)
-          }).catch(() => {})
-        } else if (dirFromPrompt.startsWith('/')) {
-          // 绝对路径
-          currentDir.value = dirFromPrompt
-          console.log('📂 从 prompt 检测到绝对路径:', dirFromPrompt)
-        } else if (dirFromPrompt !== '~') {
-          // 相对路径名（如 ittools），转换为绝对路径
-          invoke('get_home_dir').then(homeDir => {
-            currentDir.value = `${homeDir}/${dirFromPrompt}`
-            console.log('📂 从 prompt 检测到相对路径:', currentDir.value)
-          }).catch(() => {})
-        }
-      }
+      // 尝试从 prompt 中提取当前目录（简化后的 prompt 格式）
+      // 现在只匹配简单的命令输出，不包含用户名主机名
+      // 如果需要检测目录变化，通过 cd 命令来处理
       
       // 保存输出到 buffer（最近1000行）
       const lines = event.payload.split('\n')
@@ -766,13 +739,13 @@ const handleIntelligentTask = async (prompt) => {
     // 如果已经有记录的目录（通过 @ 选择或 cd 命令），优先使用
     if (currentDir.value && currentDir.value !== '~') {
       workingDir = currentDir.value
-      terminal.write(`\x1b[90m💡 使用已记录的目录\x1b[0m\r\n`)
+      terminal.write(`\x1b[90m💡 终端已准备就绪\x1b[0m\r\n`)
     } else {
       // 否则初始化为主目录
       try {
         workingDir = await invoke('get_home_dir')
         currentDir.value = workingDir  // 初始化 currentDir
-        terminal.write(`\x1b[90m💡 使用主目录（建议先 cd 到项目目录或用 @ 选择）\x1b[0m\r\n`)
+        terminal.write(`\x1b[90m💡 终端已准备就绪\x1b[0m\r\n`)
       } catch {
         terminal.write(`\x1b[31m❌ 无法获取工作目录，请用 @ 选择项目目录\x1b[0m\r\n`)
         if (warpMode.value === 'ai') {

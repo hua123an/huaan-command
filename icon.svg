@@ -1,50 +1,69 @@
 <svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
   <!-- 纯色背景 -->
-  <rect width="512" height="512" rx="115" fill="#007AFF"/>
+  <rect width="512" height="512" rx="115" fill="#0066CC"/>
   
   <!-- 终端窗口 -->
-  <g transform="translate(96, 128)">
+  <g transform="translate(96, 140)">
     <!-- 窗口背景 -->
-    <rect width="320" height="256" rx="16" fill="#ffffff"/>
+    <rect width="320" height="220" rx="20" fill="#ffffff" opacity="0.95"/>
     
     <!-- 窗口顶部栏 -->
-    <rect width="320" height="40" rx="16" fill="#F2F2F7"/>
-    <rect y="40" width="320" height="16" fill="#F2F2F7"/>
+    <rect width="320" height="40" rx="20" fill="#F8F9FA"/>
+    <rect y="20" width="320" height="20" fill="#F8F9FA"/>
     
     <!-- 窗口控制按钮 -->
-    <circle cx="24" cy="20" r="6" fill="#FF3B30"/>
-    <circle cx="48" cy="20" r="6" fill="#FFCC00"/>
-    <circle cx="72" cy="20" r="6" fill="#30D158"/>
+    <circle cx="24" cy="20" r="5" fill="#FF5F57"/>
+    <circle cx="44" cy="20" r="5" fill="#FEBC2E"/>
+    <circle cx="64" cy="20" r="5" fill="#28CA42"/>
     
-    <!-- 终端提示符 -->
-    <text x="24" y="90" font-family="SF Mono, Monaco, monospace" font-size="24" fill="#007AFF" font-weight="bold">❯</text>
+    <!-- 终端内容 -->
+    <g transform="translate(20, 70)">
+      <!-- 命令行 1 -->
+      <text font-family="SF Mono, Monaco, monospace" font-size="16" fill="#333333" font-weight="500">$ npm run dev</text>
+      
+      <!-- 命令行 2 -->
+      <text y="30" font-family="SF Mono, Monaco, monospace" font-size="16" fill="#333333" font-weight="500">$ cargo build</text>
+      
+      <!-- 命令行 3 -->
+      <text y="60" font-family="SF Mono, Monaco, monospace" font-size="16" fill="#333333" font-weight="500">$ git commit</text>
+      
+      <!-- 光标 -->
+      <rect x="110" y="85" width="2" height="16" fill="#0066CC">
+        <animate attributeName="opacity" values="1;0.2;1" dur="1.2s" repeatCount="indefinite"/>
+      </rect>
+    </g>
     
-    <!-- 光标 -->
-    <rect x="40" y="72" width="12" height="24" fill="#007AFF">
-      <animate attributeName="opacity" values="1;0.3;1" dur="1.5s" repeatCount="indefinite"/>
-    </rect>
-    
-    <!-- 代码行 - 使用纯色 -->
-    <text x="24" y="135" font-family="SF Mono, Monaco, monospace" font-size="18" fill="#000000">npm run dev</text>
-    <text x="24" y="165" font-family="SF Mono, Monaco, monospace" font-size="18" fill="#000000">cargo build</text>
-    <text x="24" y="195" font-family="SF Mono, Monaco, monospace" font-size="18" fill="#000000">git commit</text>
-    
-    <!-- AI 符号 - 简化设计 -->
-    <g transform="translate(260, 180)">
-      <!-- AI 图标背景 -->
-      <circle cx="0" cy="0" r="24" fill="#007AFF" opacity="0.1"/>
-      <!-- AI 简化图标 -->
-      <circle cx="-8" cy="-4" r="3" fill="#007AFF"/>
-      <circle cx="8" cy="-4" r="3" fill="#007AFF"/>
-      <circle cx="0" cy="8" r="3" fill="#007AFF"/>
-      <line x1="-8" y1="-4" x2="0" y2="8" stroke="#007AFF" stroke-width="2"/>
-      <line x1="8" y1="-4" x2="0" y2="8" stroke="#007AFF" stroke-width="2"/>
-      <line x1="-8" y1="-4" x2="8" y2="-4" stroke="#007AFF" stroke-width="2"/>
+    <!-- AI 图标 - 现代化设计 -->
+    <g transform="translate(260, 110)">
+      <!-- 外圆 -->
+      <circle cx="0" cy="0" r="28" fill="#0066CC" opacity="0.15"/>
+      <!-- 内圆 -->
+      <circle cx="0" cy="0" r="20" fill="#0066CC" opacity="0.25"/>
+      <!-- AI 核心 -->
+      <circle cx="0" cy="0" r="12" fill="#0066CC"/>
+      <!-- 神经网络节点 -->
+      <circle cx="-8" cy="-8" r="3" fill="#ffffff"/>
+      <circle cx="8" cy="-8" r="3" fill="#ffffff"/>
+      <circle cx="8" cy="8" r="3" fill="#ffffff"/>
+      <circle cx="-8" cy="8" r="3" fill="#ffffff"/>
+      <!-- 连接线 -->
+      <line x1="-8" y1="-8" x2="0" y2="0" stroke="#ffffff" stroke-width="1.5"/>
+      <line x1="8" y1="-8" x2="0" y2="0" stroke="#ffffff" stroke-width="1.5"/>
+      <line x1="8" y1="8" x2="0" y2="0" stroke="#ffffff" stroke-width="1.5"/>
+      <line x1="-8" y1="8" x2="0" y2="0" stroke="#ffffff" stroke-width="1.5"/>
     </g>
   </g>
   
-  <!-- 装饰元素：简化代码符号 -->
-  <text x="50" y="100" font-family="SF Mono, monospace" font-size="36" fill="#ffffff" opacity="0.3" font-weight="bold">&lt;/&gt;</text>
-  <text x="420" y="460" font-family="SF Mono, monospace" font-size="36" fill="#ffffff" opacity="0.3" font-weight="bold">{ }</text>
+  <!-- 装饰性代码符号 -->
+  <g opacity="0.15">
+    <text x="60" y="120" font-family="SF Mono, monospace" font-size="32" fill="#ffffff" font-weight="300">&lt;/&gt;</text>
+    <text x="380" y="420" font-family="SF Mono, monospace" font-size="32" fill="#ffffff" font-weight="300">{ }</text>
+    <text x="100" y="400" font-family="SF Mono, monospace" font-size="28" fill="#ffffff" font-weight="300">const</text>
+    <text x="350" y="100" font-family="SF Mono, monospace" font-size="28" fill="#ffffff" font-weight="300">async</text>
+  </g>
+  
+  <!-- 底部装饰线 -->
+  <rect x="96" y="380" width="320" height="2" fill="#ffffff" opacity="0.2"/>
+  <rect x="96" y="386" width="200" height="2" fill="#ffffff" opacity="0.1"/>
 </svg>
 

@@ -1,6 +1,6 @@
 [package]
 name = "huaan-command"
-version = "1.0.0"
+version = "1.1.0"
 description = "智能终端命令管理工具 - 集成 AI 助手的现代化终端"
 authors = ["Huaan"]
 edition = "2021"

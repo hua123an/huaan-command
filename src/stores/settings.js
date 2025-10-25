@@ -3,7 +3,7 @@ import { ref } from 'vue'
 
 export const useSettingsStore = defineStore('settings', () => {
   const settings = ref({
-    theme: 'auto', // 'dark' | 'light' | 'auto' - 默认跟随系统
+    theme: 'light', // 'dark' | 'light' | 'auto' - 默认使用浅色主题
     maxConcurrent: 10,
     enableNotifications: true,
     enableSound: true,

@@ -10,7 +10,7 @@ function debounce(fn, delay) {
   }
 }
 
-// 主题定义
+// 主题定义 - iFlow风格
 const themes = {
   dark: {
     '--bg-primary': '#1c1c1e',
@@ -43,30 +43,30 @@ const themes = {
   light: {
     '--bg-primary': '#ffffff',
     '--bg-secondary': '#f8f8fa',
-    '--bg-tertiary': '#eeeff3',
+    '--bg-tertiary': '#ffffff', // iFlow风格的纯白色
     '--bg-hover': 'rgba(0, 0, 0, 0.05)',
     '--bg-active': 'rgba(0, 0, 0, 0.08)',
-    '--text-primary': '#1d1d1f',
-    '--text-secondary': '#86868b',
-    '--text-tertiary': '#d1d1d6',
-    '--border-color': 'rgba(0, 0, 0, 0.12)',
+    '--text-primary': '#1a1a1a', // iFlow风格的深黑色
+    '--text-secondary': '#8e8e93', // 系统灰色
+    '--text-tertiary': '#999999',
+    '--border-color': '#e5e5e5', // iFlow风格的浅边框
     '--border-hover': 'rgba(0, 0, 0, 0.2)',
-    '--accent-color': '#007aff',
-    '--accent-hover': '#0051d5',
-    '--success-color': '#28cd41',
-    '--error-color': '#ff3b30',
+    '--accent-color': '#0071e3', // Apple蓝色
+    '--accent-hover': '#005bb5',
+    '--success-color': '#4caf50',
+    '--error-color': '#ff453a',
     '--warning-color': '#ff9500',
-    '--terminal-bg': '#ffffff',
-    '--terminal-fg': '#1d1d1f',
-    '--terminal-cursor': '#007aff',
-    '--terminal-black': '#1d1d1f',
-    '--terminal-red': '#ff3b30',
-    '--terminal-green': '#28cd41',
-    '--terminal-yellow': '#ff9500',
-    '--terminal-blue': '#007aff',
-    '--terminal-magenta': '#af52de',
-    '--terminal-cyan': '#32ade6',
-    '--terminal-white': '#636366',
+    '--terminal-bg': '#ffffff', // iFlow风格的纯白终端背景
+    '--terminal-fg': '#1a1a1a', // iFlow风格的深色文字
+    '--terminal-cursor': '#1a1a1a', // iFlow风格的深色光标
+    '--terminal-black': '#1a1a1a',
+    '--terminal-red': '#ff453a',
+    '--terminal-green': '#32d74b',
+    '--terminal-yellow': '#ffd60a',
+    '--terminal-blue': '#0071e3',
+    '--terminal-magenta': '#bf5af2',
+    '--terminal-cyan': '#5ac8fa',
+    '--terminal-white': '#8e8e93',
   }
 }
 
@@ -151,16 +151,19 @@ export function useTheme() {
       const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
       actualTheme = prefersDark ? 'dark' : 'light'
     }
-    
+
     // 确保使用有效的主题
     actualTheme = actualTheme === 'light' ? 'light' : 'dark'
     const colors = themes[actualTheme]
-    
+
     return {
       background: colors['--terminal-bg'],
       foreground: colors['--terminal-fg'],
       cursor: colors['--terminal-cursor'],
       cursorAccent: colors['--terminal-bg'],
+      // 选中文本的高亮颜色
+      selectionBackground: actualTheme === 'dark' ? 'rgba(10, 132, 255, 0.3)' : 'rgba(0, 113, 227, 0.25)',
+      selectionForeground: undefined, // 使用默认前景色
       black: colors['--terminal-black'],
       red: colors['--terminal-red'],
       green: colors['--terminal-green'],

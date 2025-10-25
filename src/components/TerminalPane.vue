@@ -9,8 +9,10 @@ import { useAIStore } from '../stores/ai'
 import { useTerminalStore } from '../stores/terminal'
 import { useSettingsStore } from '../stores/settings'
 import { useTheme } from '../composables/useTheme'
+import { useCommandSuggestion } from '../composables/useCommandSuggestion'
 import WarpModeBar from './WarpModeBar.vue'
 import FilePickerModal from './FilePickerModal.vue'
+import AutocompleteMenu from './AutocompleteMenu.vue'
 import '@xterm/xterm/css/xterm.css'
 
 const props = defineProps({
@@ -22,15 +24,31 @@ const aiStore = useAIStore()
 const terminalStore = useTerminalStore()
 const settingsStore = useSettingsStore()
 const { getTerminalTheme } = useTheme()
-const settingsStore = useSettingsStore()
-const { getTerminalTheme } = useTheme()
+
+// 命令建议功能
+const {
+  suggestions,
+  updateInput,
+  acceptSuggestion,
+  addToHistory,
+  loadHistory
+} = useCommandSuggestion()
+
+// 自动补全菜单
+const showAutocomplete = ref(false)
+const autocompletePosition = ref({ x: 100, y: 100 })
+const autocompleteMenuRef = ref(null)
 
 const terminalRef = ref(null)
+const bottomInputRef = ref(null)
+const bottomInput = ref('')
+const bottomInputSuggestion = ref('')
 const showAIPanel = ref(false)
 const aiPrompt = ref('')
 const aiResponse = ref('')
 const aiLoading = ref(false)
 const terminalBuffer = ref([])  // 存储终端输出
+const commandHistory = ref([])  // 存储命令历史
 const aiMode = ref(false)  // AI 模式开关（已废弃，使用 warpMode）
 const currentInput = ref('')  // 当前输入缓存
 
@@ -58,6 +76,7 @@ const saveSessionData = () => {
   terminalStore.updateSessionModel(props.session.id, currentModel.value)
   terminalStore.updateSessionConversation(props.session.id, conversationHistory.value)
   terminalStore.updateSessionBuffer(props.session.id, terminalBuffer.value)
+  terminalStore.updateSessionCommandHistory(props.session.id, commandHistory.value)
   terminalStore.updateSessionCurrentDir(props.session.id, currentDir.value)
 }
 
@@ -71,6 +90,7 @@ const restoreSessionData = () => {
     currentModel.value = sessionData.currentModel || aiStore.model || 'gpt-4o-mini'
     conversationHistory.value = sessionData.conversationHistory || []
     terminalBuffer.value = sessionData.terminalBuffer || []
+    commandHistory.value = sessionData.commandHistory || []
     currentDir.value = sessionData.currentDir || '~'
     
     // 如果有恢复的数据，说明已经初始化过
@@ -83,6 +103,7 @@ const restoreSessionData = () => {
       model: currentModel.value,
       conversations: conversationHistory.value.length,
       bufferLines: terminalBuffer.value.length,
+      commandHistory: commandHistory.value.length,
       currentDir: currentDir.value,
       hasInitialized: sessionInitialized.get(props.session.id) || false
     })
@@ -90,9 +111,19 @@ const restoreSessionData = () => {
 }
 
 onMounted(async () => {
+  console.log('🟢 TerminalPane onMounted - 开始初始化')
+  console.log('🟢 Session ID:', props.session?.id)
+
   // 先恢复会话数据
   restoreSessionData()
-  
+
+  // 加载命令历史到建议系统
+  if (commandHistory.value.length > 0) {
+    const historyCommands = commandHistory.value.map(h => h.command || h).filter(Boolean)
+    loadHistory(historyCommands)
+  }
+
+  console.log('🟢 创建 Terminal 实例')
   terminal = new Terminal({
     cursorBlink: true,
     fontSize: 14,
@@ -104,12 +135,81 @@ onMounted(async () => {
     scrollback: 10000
   })
 
+  console.log('🟢 加载 Terminal 插件')
   fitAddon = new FitAddon()
   terminal.loadAddon(fitAddon)
   terminal.loadAddon(new WebLinksAddon())
 
+  console.log('🟢 打开终端到 DOM')
   terminal.open(terminalRef.value)
   fitAddon.fit()
+
+  console.log('🟢 聚焦终端')
+  terminal.focus()
+
+  console.log('🟢 注册 onData 回调')
+  // 立即注册 onData 回调（在启动终端进程之前）
+  terminal.onData(async (data) => {
+    console.log('🔵 收到终端输入:', data, '(charCode:', data.charCodeAt(0), ')')
+
+    try {
+      // 如果正在切换模式，忽略所有输入
+      if (isModeSwitching.value) {
+        console.log('⚠️ 模式切换中，忽略输入')
+        return
+      }
+
+      // 检测 Ctrl+A（切换 AI 模式）
+      if (data === '\x01') {  // Ctrl+A
+        console.log('🔵 检测到 Ctrl+A')
+        toggleAIMode()
+        return  // 不发送到 shell
+      }
+
+      // 如果在 AI 模式（Warp 模式或旧的 aiMode），完全接管输入
+      if (warpMode.value === 'ai' || aiMode.value) {
+        console.log('🔵 AI 模式处理输入')
+        // 更新输入缓存并显示在终端
+        if (data === '\x7f' || data === '\b') {
+          // 退格键
+          if (currentInput.value.length > 0) {
+            currentInput.value = currentInput.value.slice(0, -1)
+            terminal.write('\b \b')  // 终端显示退格
+          }
+        } else if (data !== '\r') {
+          // 所有非回车的字符（包括中文）
+          currentInput.value += data
+          terminal.write(data)  // 终端显示输入
+        }
+
+        // 检测回车键
+        if (data === '\r') {
+          if (currentInput.value.trim()) {
+            terminal.write('\r\n')
+            await handleAICommand(currentInput.value.trim())
+          } else {
+            terminal.write('\r\n')
+          }
+          currentInput.value = ''
+          updateInput('')  // 清空建议
+          return
+        }
+
+        return  // AI 模式下不发送到 shell
+      }
+
+      // 终端模式：直接透传所有输入到 shell，不做任何拦截
+      console.log('🔵 终端模式，发送到 shell:', data)
+      await invoke('write_terminal', {
+        sessionId: props.session.id,
+        data
+      })
+      console.log('✅ 已发送到 shell')
+    } catch (error) {
+      console.error('❌ 写入终端失败:', error)
+    }
+  })
+  console.log('🟢 onData 回调已注册')
 
   // 恢复历史终端内容（如果有）
   if (terminalBuffer.value.length > 0) {
@@ -122,9 +222,11 @@ onMounted(async () => {
   }
 
   // 启动终端进程
+  console.log('🟢 启动终端进程')
   try {
     await invoke('start_terminal', { sessionId: props.session.id })
-    
+    console.log('🟢 终端进程已启动')
+
     // 监听终端输出
     unlisten = await listen(`terminal-output-${props.session.id}`, (event) => {
       terminal.write(event.payload)
@@ -156,196 +258,10 @@ onMounted(async () => {
         }
       }, 300)  // 300ms 延迟确保终端完全就绪
     }
-    
+
   } catch (error) {
     terminal.write(`\x1b[31m错误: ${error}\x1b[0m\r\n`)
   }
-
-  // 监听用户输入
-  terminal.onData(async (data) => {
-    try {
-      // 如果正在切换模式，忽略所有输入
-      if (isModeSwitching.value) {
-        return
-      }
-      
-      // 检测 Ctrl+A（切换 AI 模式）
-      if (data === '\x01') {  // Ctrl+A
-        toggleAIMode()
-        return  // 不发送到 shell
-      }
-      
-      // 如果在 AI 模式（Warp 模式或旧的 aiMode），完全接管输入
-      if (warpMode.value === 'ai' || aiMode.value) {
-        // 更新输入缓存并显示在终端
-        if (data === '\x7f' || data === '\b') {
-          // 退格键
-          if (currentInput.value.length > 0) {
-            currentInput.value = currentInput.value.slice(0, -1)
-            terminal.write('\b \b')  // 终端显示退格
-          }
-        } else if (data !== '\r') {
-          // 所有非回车的字符（包括中文）
-          currentInput.value += data
-          terminal.write(data)  // 终端显示输入
-        }
-        
-        // 检测回车键
-        if (data === '\r') {
-          if (currentInput.value.trim()) {
-            terminal.write('\r\n')
-            await handleAICommand(currentInput.value.trim())
-          } else {
-            terminal.write('\r\n')
-          }
-          currentInput.value = ''
-          return
-        }
-        
-        return  // AI 模式下不发送到 shell
-      }
-      
-      // 普通模式：处理 /ai 命令检测
-      const beforeUpdate = currentInput.value
-      
-      // 更新输入缓存
-      if (data === '\x7f' || data === '\b') {
-        if (currentInput.value.length > 0) {
-          currentInput.value = currentInput.value.slice(0, -1)
-        }
-      } else if (data !== '\r') {
-        currentInput.value += data
-      }
-      
-      // 检测是否可能正在输入 /ai 命令
-      const wasMightBeAICommand = 
-        beforeUpdate === '/' ||
-        beforeUpdate === '/a' ||
-        beforeUpdate.startsWith('/ai')
-      
-      const nowMightBeAICommand = 
-        currentInput.value === '/' ||
-        currentInput.value === '/a' ||
-        currentInput.value.startsWith('/ai')
-      
-      // 检测回车键
-      if (data === '\r') {
-        if (currentInput.value.trim().startsWith('/ai ')) {
-          // 是 /ai 命令，执行
-          const prompt = currentInput.value.trim().substring(4).trim()
-          if (prompt) {
-            terminal.write('\r\n')
-            await handleAICommand(prompt)
-          } else {
-            terminal.write('\r\n')
-          }
-          currentInput.value = ''
-          return  // 不发送到 shell
-        }
-        
-        // 检测 cd 命令，更新当前目录（在清空 currentInput 之前）
-        // 清理 Tab 字符（用户可能用了 Tab 补全）
-        const cmd = currentInput.value.replace(/\t/g, '').trim()
-        if (cmd) {
-          // 匹配 cd 命令
-          const cdMatch = cmd.match(/^cd\s+(.+)$/)
-          if (cdMatch) {
-            let targetDir = cdMatch[1].trim()
-            // 处理特殊路径
-            if (targetDir === '~') {
-              try {
-                targetDir = await invoke('get_home_dir')
-                currentDir.value = targetDir
-                console.log('📂 检测到 cd ~，更新目录:', targetDir)
-              } catch (error) {
-                console.warn('获取主目录失败:', error)
-              }
-            } else if (targetDir.startsWith('~/')) {
-              try {
-                const homeDir = await invoke('get_home_dir')
-                targetDir = targetDir.replace('~', homeDir)
-                currentDir.value = targetDir
-                console.log('📂 检测到 cd ~/', '更新目录:', targetDir)
-              } catch (error) {
-                console.warn('获取主目录失败:', error)
-              }
-            } else if (targetDir.startsWith('/')) {
-              // 绝对路径
-              currentDir.value = targetDir
-              console.log('📂 检测到 cd 绝对路径，更新目录:', targetDir)
-            } else {
-              // 相对路径：拼接到当前目录
-              const currentPath = currentDir.value || await invoke('get_home_dir').catch(() => '~')
-              if (currentPath && currentPath !== '~') {
-                currentDir.value = `${currentPath}/${targetDir}`
-                console.log('📂 检测到 cd 相对路径，更新目录:', currentDir.value)
-              }
-            }
-          } else if (cmd === 'cd') {
-            // cd 无参数，回到主目录
-            try {
-              const homeDir = await invoke('get_home_dir')
-              currentDir.value = homeDir
-              console.log('📂 检测到 cd（无参数），回到主目录:', homeDir)
-            } catch (error) {
-              console.warn('获取主目录失败:', error)
-            }
-          }
-        }
-        
-        // 不是 /ai 命令，但如果缓存有内容（可能是误输入的 /xxx），需要先发送
-        if (beforeUpdate.length > 0 && beforeUpdate.startsWith('/')) {
-          // 把缓存的 / 开头的内容发送到 shell
-          for (let char of beforeUpdate) {
-            await invoke('write_terminal', {
-              sessionId: props.session.id,
-              data: char
-            })
-          }
-        }
-        currentInput.value = ''
-        // 继续处理回车
-      }
-      
-      // 如果之前可能是 AI 命令，但现在不是了（比如输入 /l），需要把缓存发送
-      if (wasMightBeAICommand && !nowMightBeAICommand && beforeUpdate.length > 0) {
-        // 发送之前的缓存
-        for (let char of beforeUpdate) {
-          await invoke('write_terminal', {
-            sessionId: props.session.id,
-            data: char
-          })
-        }
-        // 当前字符也发送
-        await invoke('write_terminal', {
-          sessionId: props.session.id,
-          data
-        })
-        return
-      }
-      
-      // 如果可能是 /ai 命令，在本地显示但不发送到 shell
-      if (nowMightBeAICommand) {
-        // 只在终端显示
-        if (data === '\x7f' || data === '\b') {
-          if (beforeUpdate.length > 0) {
-            terminal.write('\b \b')
-          }
-        } else if (data !== '\r') {
-          terminal.write(data)
-        }
-        return  // 不发送到 shell
-      }
-      
-      // 普通命令，正常写入终端
-      await invoke('write_terminal', { 
-        sessionId: props.session.id, 
-        data 
-      })
-    } catch (error) {
-      console.error('写入终端失败:', error)
-    }
-  })
 
   // 窗口大小调整
   const resizeObserver = new ResizeObserver(() => {
@@ -914,7 +830,7 @@ darkModeQuery.addEventListener('change', handleSystemThemeChange)
 
 
 // 监听数据变化，自动保存
-watch([warpMode, currentModel, conversationHistory, terminalBuffer, currentDir], () => {
+watch([warpMode, currentModel, conversationHistory, terminalBuffer, commandHistory, currentDir], () => {
   saveSessionData()
 }, { deep: true })
 
@@ -934,9 +850,10 @@ watch(() => props.session?.id, (newId, oldId) => {
 const handleModeUpdate = async (mode) => {
   // 🔒 锁定输入，防止切换期间的输入泄露
   isModeSwitching.value = true
-  
+
   // 清空输入缓存，防止输入泄露
   currentInput.value = ''
+  updateInput('')  // 清空建议
   
   // 先更新模式状态（必须在发送任何内容到终端之前）
   warpMode.value = mode
@@ -997,6 +914,7 @@ const handleMentionFile = () => {
   showFilePicker.value = true
 }
 
+// 处理文件选择
 const handleFileSelect = (file) => {
   selectedFiles.value.push(file)
   
@@ -1008,12 +926,230 @@ const handleFileSelect = (file) => {
   const icon = file.isDir ? '📁' : '📄'
   const type = file.isDir ? '目录' : '文件'
   
-  terminal.write(`\r\n\x1b[36m${icon} 已选择${type}: ${file.name}\x1b[0m\r\n`)
-  terminal.write(`\x1b[90m路径: ${file.path}\x1b[0m\r\n`)
+  terminal.write(`
+\x1b[36m${icon} 已选择${type}: ${file.name}\x1b[0m
+`)
+  terminal.write(`\x1b[90m路径: ${file.path}\x1b[0m
+`)
   
   // 如果在 AI 模式，可以直接提示用户可以使用这个文件/目录
   if (warpMode.value === 'ai') {
-    terminal.write(`\x1b[90m提示: 现在可以在提示中引用此${type}\x1b[0m\r\n`)
+    terminal.write(`\x1b[90m提示: 现在可以在提示中引用此${type}\x1b[0m
+`)
+  }
+}
+
+// 保存会话
+const saveSession = () => {
+  saveSessionData()
+  terminal.write('
+\x1b[32m✓ 会话已保存\x1b[0m
+')
+}
+
+// 清空终端
+const clearTerminal = () => {
+  if (terminal) {
+    terminal.clear()
+    terminalBuffer.value = []
+    terminal.write('\x1b[32m✓ 终端已清空\x1b[0m
+')
+  }
+}
+
+// 复制内容
+const copyContent = () => {
+  const content = getTerminalText()
+  if (content) {
+    navigator.clipboard.writeText(content).then(() => {
+      terminal.write('
+\x1b[32m✓ 内容已复制到剪贴板\x1b[0m
+')
+    }).catch(() => {
+      terminal.write('
+\x1b[31m❌ 复制失败\x1b[0m
+')
+    })
+  } else {
+    terminal.write('
+\x1b[33m⚠️ 没有可复制的内容\x1b[0m
+')
+  }
+}
+
+// 下载内容
+const downloadContent = () => {
+  const content = getTerminalText()
+  if (content) {
+    const blob = new Blob([content], { type: 'text/plain' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `terminal-${session.id}-${Date.now()}.txt`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+    terminal.write('
+\x1b[32m✓ 内容已下载\x1b[0m
+')
+  } else {
+    terminal.write('
+\x1b[33m⚠️ 没有可下载的内容\x1b[0m
+')
+  }
+}
+
+// 处理自动补全选择
+const handleAutocompleteSelect = async (selectedCommand) => {
+  showAutocomplete.value = false
+
+  // 清除当前输入
+  for (let i = 0; i < currentInput.value.length; i++) {
+    terminal.write('\b \b')
+  }
+
+  // 写入选择的命令
+  terminal.write(selectedCommand)
+
+  // 更新输入状态
+  currentInput.value = selectedCommand
+  updateInput(selectedCommand)
+  acceptSuggestion(selectedCommand)
+}
+
+// 处理底部输入框输入变化
+const handleBottomInputChange = () => {
+  // 更新建议系统
+  updateInput(bottomInput.value)
+
+  // 显示建议
+  if (suggestions.value.length > 0) {
+    bottomInputSuggestion.value = suggestions.value[0]
+  } else {
+    bottomInputSuggestion.value = ''
+  }
+}
+
+// 处理底部输入框按键
+const handleBottomInputKeydown = async (event) => {
+  // Enter键：执行命令
+  if (event.key === 'Enter') {
+    event.preventDefault()
+
+    const command = bottomInput.value.trim()
+    if (command) {
+      // 添加到历史
+      addToHistory(command)
+
+      // 聚焦到终端
+      if (terminal) {
+        terminal.focus()
+      }
+
+      // 发送命令到终端
+      try {
+        await invoke('write_terminal', {
+          sessionId: props.session.id,
+          data: command + '\r'
+        })
+      } catch (error) {
+        console.error('发送命令失败:', error)
+      }
+
+      // 清空输入
+      bottomInput.value = ''
+      bottomInputSuggestion.value = ''
+      updateInput('')
+    }
+  }
+  // Tab键：接受建议
+  else if (event.key === 'Tab') {
+    event.preventDefault()
+
+    if (bottomInputSuggestion.value) {
+      bottomInput.value = bottomInputSuggestion.value
+      bottomInputSuggestion.value = ''
+      updateInput(bottomInput.value)
+    }
+  }
+  // 右箭头键：接受建议
+  else if (event.key === 'ArrowRight') {
+    // 只有光标在末尾时才接受建议
+    const input = event.target
+    if (input.selectionStart === bottomInput.value.length && bottomInputSuggestion.value) {
+      event.preventDefault()
+      bottomInput.value = bottomInputSuggestion.value
+      bottomInputSuggestion.value = ''
+      updateInput(bottomInput.value)
+    }
+  }
+  // 上箭头键：从历史中选择上一条命令
+  else if (event.key === 'ArrowUp') {
+    event.preventDefault()
+
+    if (commandHistory.value.length > 0) {
+      const lastCommand = commandHistory.value[0]
+      if (typeof lastCommand === 'object' && lastCommand.command) {
+        bottomInput.value = lastCommand.command
+      } else {
+        bottomInput.value = lastCommand
+      }
+      updateInput(bottomInput.value)
+    }
+  }
+}
+
+// 聚焦终端
+const focusTerminal = () => {
+  if (terminal) {
+    // 检查终端是否有选中的文本
+    const selection = terminal.getSelection()
+    if (selection && selection.length > 0) {
+      // 有选中文本时不聚焦，避免干扰文本选择
+      return
+    }
+
+    terminal.focus()
+  }
+}
+
+// 发送通知
+const sendNotification = () => {
+  if ('Notification' in window) {
+    if (Notification.permission === 'granted') {
+      new Notification('Huaan Command', {
+        body: '终端通知已发送',
+        icon: '/icon.png'
+      })
+      terminal.write('
+\x1b[32m✓ 通知已发送\x1b[0m
+')
+    } else if (Notification.permission !== 'denied') {
+      Notification.requestPermission().then(permission => {
+        if (permission === 'granted') {
+          new Notification('Huaan Command', {
+            body: '终端通知已发送',
+            icon: '/icon.png'
+          })
+          terminal.write('
+\x1b[32m✓ 通知已发送\x1b[0m
+')
+        } else {
+          terminal.write('
+\x1b[33m⚠️ 通知权限被拒绝\x1b[0m
+')
+        }
+      })
+    } else {
+      terminal.write('
+\x1b[33m⚠️ 通知权限被拒绝\x1b[0m
+')
+    }
+  } else {
+    terminal.write('
+\x1b[31m❌ 浏览器不支持通知\x1b[0m
+')
   }
 }
 
@@ -1058,42 +1194,81 @@ onUnmounted(async () => {
 
 <template>
   <div :class="['terminal-container', { visible }]">
-    <!-- Warp 模式栏 -->
-    <WarpModeBar
+    <!-- Warp模式栏 -->
+    <WarpModeBar 
       :mode="warpMode"
-      :currentModel="currentModel"
-      :sessionId="session.id"
+      :current-model="currentModel"
+      :session-id="session.id"
       @update:mode="handleModeUpdate"
-      @update:currentModel="handleModelUpdate"
+      @update:current-model="handleModelUpdate"
       @mention-file="handleMentionFile"
     />
     
     <!-- 终端 -->
-    <div 
+    <div
       class="terminal-pane"
       ref="terminalRef"
+      @click="focusTerminal"
     />
     
-    <!-- AI 模式指示器 -->
-    <div v-if="aiMode" class="ai-mode-indicator">
-      <span class="mode-badge ai-active">
-        🤖 AI 模式
-      </span>
-      <div class="mode-hint">
-        输入自然语言，回车生成并执行命令 | Ctrl+A 退出
+    <!-- iFlow风格输入栏 -->
+    <div class="iflow-input-bar">
+      <div class="input-actions">
+        <button class="action-btn" title="对话">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <path d="M8 1C11.866 1 15 4.13401 15 8C15 11.866 11.866 15 8 15C4.13401 15 1 11.866 1 8C1 4.13401 4.13401 1 8 1Z" stroke="currentColor" stroke-width="1.5"/>
+            <path d="M5.5 7.5L8 10L10.5 7.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
+        
+        <button class="action-btn" @click="handleMentionFile" title="文件">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <path d="M3 3H13V13H3V3Z" stroke="currentColor" stroke-width="1.5"/>
+            <path d="M6 6H10M6 8H10M6 10H8" stroke="currentColor" stroke-width="1" stroke-linecap="round"/>
+          </svg>
+          <span class="action-text">~</span>
+        </button>
+        
+        <button class="action-btn" title="执行">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <path d="M3 3L13 8L3 13V3Z" fill="currentColor"/>
+          </svg>
+          <span class="action-text">→</span>
+        </button>
+        
+        <button class="action-btn" title="表情">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <circle cx="8" cy="8" r="5" stroke="currentColor" stroke-width="1.5"/>
+            <circle cx="6" cy="7" r="1" fill="currentColor"/>
+            <circle cx="10" cy="7" r="1" fill="currentColor"/>
+            <path d="M5 10C5 10 6.5 11.5 8 11.5C9.5 11.5 11 10 11 10" stroke="currentColor" stroke-width="1" stroke-linecap="round"/>
+          </svg>
+        </button>
+        
+        <button class="action-btn" @click="sendNotification" title="邮件">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <rect x="2" y="4" width="12" height="8" rx="1" stroke="currentColor" stroke-width="1.5"/>
+            <path d="M2 5L8 9L14 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
+      </div>
+      
+      <div class="input-area">
+        <div class="prompt-arrow">></div>
+        <input
+          ref="bottomInputRef"
+          v-model="bottomInput"
+          type="text"
+          class="input-field-active"
+          placeholder="输入命令..."
+          @keydown="handleBottomInputKeydown"
+          @input="handleBottomInputChange"
+        />
+        <div v-if="bottomInputSuggestion" class="bottom-suggestion">
+          {{ bottomInputSuggestion }}
+        </div>
       </div>
     </div>
-    
-    <!-- AI 助手按钮 -->
-    <button 
-      v-if="aiStore.enabled && aiStore.isConfigured"
-      class="ai-trigger-btn"
-      @click="showAIPanel = !showAIPanel"
-      :class="{ active: showAIPanel, 'ai-mode-active': aiMode }"
-      :title="aiMode ? 'AI 模式激活中 (Ctrl+A 切换)' : 'AI 助手面板 / Ctrl+A 切换 AI 模式'"
-    >
-      🤖
-    </button>
     
     <!-- AI 助手面板 -->
     <div v-if="showAIPanel" class="ai-panel">
@@ -1180,6 +1355,16 @@ onUnmounted(async () => {
       @close="showFilePicker = false"
       @select="handleFileSelect"
     />
+
+    <!-- 自动补全菜单 -->
+    <AutocompleteMenu
+      ref="autocompleteMenuRef"
+      :visible="showAutocomplete"
+      :suggestions="suggestions"
+      :position="autocompletePosition"
+      @select="handleAutocompleteSelect"
+      @close="showAutocomplete = false"
+    />
   </div>
 </template>
 
@@ -1195,6 +1380,7 @@ onUnmounted(async () => {
   transition: opacity 0.15s ease;
   display: flex;
   flex-direction: column;
+  background: #ffffff;
 }
 
 .terminal-container.visible {
@@ -1206,8 +1392,137 @@ onUnmounted(async () => {
   flex: 1;
   position: relative;
   padding: 16px;
-  padding-bottom: 60px; /* 为 Warp 模式栏留出空间 */
+  padding-bottom: 80px; /* 为iFlow风格输入栏留出空间 */
   overflow: hidden;
+  font-family: 'SF Mono', Menlo, Monaco, 'Courier New', monospace;
+  font-size: 13px;
+  line-height: 1.4;
+  color: #1a1a1a;
+  background: #ffffff;
+}
+
+/* iFlow风格输入栏 */
+.iflow-input-bar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 60px;
+  background: #ffffff;
+  border-top: 1px solid #e5e5e5;
+  display: flex;
+  align-items: center;
+  padding: 12px 16px;
+  gap: 12px;
+}
+
+.input-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.action-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 8px;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  color: #8e8e93;
+  cursor: pointer;
+  font-size: 13px;
+  transition: all 0.2s ease;
+}
+
+.action-btn:hover {
+  background: #f5f5f5;
+  color: #1a1a1a;
+}
+
+.action-text {
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.input-area {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  position: relative;
+  background: #ffffff;
+  border: 2px solid #0071e3;
+  border-radius: 8px;
+  padding: 8px 12px;
+  gap: 8px;
+  transition: all 0.2s ease;
+}
+
+.input-area:hover {
+  border-color: #005bb5;
+}
+
+.prompt-arrow {
+  color: #0071e3;
+  font-weight: bold;
+  font-size: 14px;
+}
+
+.input-field-active {
+  flex: 1;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-family: 'SF Mono', Menlo, Monaco, 'Courier New', monospace;
+  font-size: 13px;
+  color: #1a1a1a;
+  padding: 0;
+  min-height: 20px;
+}
+
+.input-field-active::placeholder {
+  color: #8e8e93;
+}
+
+.bottom-suggestion {
+  position: absolute;
+  left: 52px; /* 箭头宽度 + 间距 */
+  color: #8e8e93;
+  pointer-events: none;
+  font-family: 'SF Mono', Menlo, Monaco, 'Courier New', monospace;
+  font-size: 13px;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.input-field {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  min-height: 20px;
+  position: relative;
+}
+
+.cursor {
+  width: 8px;
+  height: 16px;
+  background: #1a1a1a;
+  animation: blink 1s infinite;
+}
+
+@keyframes blink {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0; }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
 }
 
 /* AI 模式指示器 */
@@ -1600,14 +1915,32 @@ onUnmounted(async () => {
 :deep(.xterm) {
   height: 100%;
   padding: 0;
+  background: #ffffff;
 }
 
 :deep(.xterm-viewport) {
-  background: transparent !important;
+  background: #ffffff !important;
 }
 
 :deep(.xterm-screen) {
   padding-right: 8px;
+  background: #ffffff;
+}
+
+:deep(.xterm-rows) {
+  font-family: 'SF Mono', Menlo, Monaco, 'Courier New', monospace !important;
+  font-size: 13px !important;
+  line-height: 1.4 !important;
+  color: #1a1a1a !important;
+}
+
+:deep(.xterm-row) {
+  background: #ffffff !important;
+}
+
+:deep(.xterm-cursor) {
+  background: #1a1a1a !important;
+  color: #ffffff !important;
 }
 </style>
 

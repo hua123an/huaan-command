@@ -311,8 +311,9 @@ onMounted(() => {
   width: 90%;
   max-width: 700px;
   max-height: 80vh;
-  background: rgba(30, 30, 32, 0.98);
+  background: var(--bg-primary);
   border-radius: 12px;
+  border: 1px solid var(--border-color);
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
   display: flex;
   flex-direction: column;
@@ -337,7 +338,7 @@ onMounted(() => {
   justify-content: space-between;
   align-items: flex-start;
   padding: 20px 24px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  border-bottom: 1px solid var(--border-color);
 }
 
 .header-left h3 {
@@ -379,7 +380,7 @@ onMounted(() => {
   align-items: center;
   gap: 8px;
   padding: 16px 24px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid var(--border-color);
   background: var(--bg-secondary);
 }
 
@@ -424,8 +425,8 @@ onMounted(() => {
   display: flex;
   gap: 8px;
   padding: 12px 24px;
-  background: rgba(0, 0, 0, 0.15);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border-color);
 }
 
 .tool-btn {

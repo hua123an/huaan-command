@@ -1,0 +1,28 @@
+# Huaan Command Terminal Initialization Script
+# This script sets up a minimal prompt for the terminal
+
+# For Zsh
+if [ -n "$ZSH_VERSION" ]; then
+  # Simple prompt: just "% "
+  PROMPT='%F{blue}❯%f '
+  # Right prompt shows directory (hidden from main view)
+  # RPROMPT='%F{8}%~%f'
+fi
+
+# For Bash
+if [ -n "$BASH_VERSION" ]; then
+  # Simple prompt: just "$ "
+  PS1='\[\033[34m\]❯\[\033[0m\] '
+fi
+
+# Export working directory tracking
+# This function will be called before each prompt
+precmd() {
+  # Send current directory to parent process (for tracking)
+  echo -ne "\033]7;file://${HOSTNAME}${PWD}\007" 2>/dev/null || true
+}
+
+# For Bash, use PROMPT_COMMAND
+if [ -n "$BASH_VERSION" ]; then
+  PROMPT_COMMAND=precmd
+fi

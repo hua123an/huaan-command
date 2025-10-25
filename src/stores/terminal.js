@@ -19,7 +19,8 @@ export const useTerminalStore = defineStore('terminal', () => {
           sessions.value = parsed.map((session, index) => ({
             ...session,
             id: Date.now() + index,  // 新 ID
-            restored: true  // 标记为恢复的会话
+            restored: true,  // 标记为恢复的会话
+            commandHistory: session.commandHistory || []
           }))
           
           // 恢复活动会话（使用第一个）
@@ -48,6 +49,7 @@ export const useTerminalStore = defineStore('terminal', () => {
         currentModel: session.currentModel || 'gpt-4o-mini',
         conversationHistory: session.conversationHistory || [],
         terminalBuffer: session.terminalBuffer || [],
+        commandHistory: session.commandHistory || [],
         currentDir: session.currentDir || '~'
       }))
       localStorage.setItem('terminal-sessions', JSON.stringify(toSave))
@@ -68,6 +70,7 @@ export const useTerminalStore = defineStore('terminal', () => {
       currentModel: 'gpt-4o-mini',
       conversationHistory: [],
       terminalBuffer: [],
+      commandHistory: [],
       currentDir: '~'
     })
     activeSessionId.value = id
@@ -144,6 +147,15 @@ export const useTerminalStore = defineStore('terminal', () => {
     }
   }
 
+  // 更新会话的命令历史
+  function updateSessionCommandHistory(id, history) {
+    const session = sessions.value.find(s => s.id === id)
+    if (session) {
+      session.commandHistory = history
+      saveSessions()
+    }
+  }
+
   // 获取会话数据
   function getSessionData(id) {
     return sessions.value.find(s => s.id === id)
@@ -173,6 +185,7 @@ export const useTerminalStore = defineStore('terminal', () => {
     updateSessionModel,
     updateSessionConversation,
     updateSessionBuffer,
+    updateSessionCommandHistory,
     updateSessionCurrentDir,
     getSessionData,
     loadSessions,

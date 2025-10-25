@@ -20,6 +20,29 @@ const searchQuery = ref('')
 const searchResults = ref([])
 const searchIndex = ref(0)
 
+// 获取当前目录的最后一级名称
+const getCurrentDirName = () => {
+  if (!props.currentDir) return ''
+
+  // 处理 ~ 符号
+  if (props.currentDir === '~') return '~'
+
+  // 去掉末尾的斜杠
+  const cleanPath = props.currentDir.replace(/\/$/, '')
+
+  // 获取最后一级目录
+  const parts = cleanPath.split('/')
+  const lastPart = parts[parts.length - 1]
+
+  // 如果是根目录或空，返回完整路径
+  return lastPart || props.currentDir
+}
+
+// 点击目录标签，打开文件选择器
+const handleDirClick = () => {
+  emit('mention-file')
+}
+
 // 自动聚焦
 const focus = () => {
   nextTick(() => {
@@ -200,11 +223,16 @@ defineExpose({
 <template>
   <div class="fixed-input" :class="{ disabled }">
     <div class="input-container">
-      <!-- 当前目录显示 -->
-      <div v-if="mode === 'terminal' && currentDir" class="current-dir">
-        {{ currentDir }}
-      </div>
-      
+      <!-- 当前目录显示（可点击） - 终端和AI模式都显示 -->
+      <button
+        v-if="currentDir"
+        class="current-dir"
+        @click="handleDirClick"
+        :title="`当前目录: ${currentDir}\n点击选择文件夹`"
+      >
+        📁 {{ getCurrentDirName() }}
+      </button>
+
       <!-- 输入框 -->
       <input
         ref="inputRef"
@@ -269,21 +297,28 @@ defineExpose({
 }
 
 .current-dir {
-  background: var(--bg-secondary);
-  color: var(--accent-color);
-  padding: 4px 8px;
-  border-radius: 6px;
+  background: transparent;
+  color: var(--text-secondary);
+  padding: 6px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
   font-size: 13px;
   font-family: 'SF Mono', Monaco, monospace;
   font-weight: 500;
   white-space: nowrap;
   cursor: pointer;
   transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .current-dir:hover {
   background: var(--bg-hover);
+  border-color: var(--accent-color);
+  color: var(--text-primary);
   transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .input-container:focus-within {

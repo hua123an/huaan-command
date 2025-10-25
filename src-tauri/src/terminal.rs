@@ -41,14 +41,21 @@ impl TerminalManager {
             std::env::var("SHELL").unwrap_or_else(|_| "/bin/bash".to_string())
         };
 
-        // 创建命令
+        // 创建命令（交互式 shell）
         let mut cmd = CommandBuilder::new(&shell);
-        cmd.cwd(std::env::var("HOME").unwrap_or_else(|_| ".".to_string()));
-        
-        // 设置简化的 prompt（仅适用于 bash/zsh）
+
+        // 设置为交互式登录 shell，确保加载配置文件和启用补全功能
         if !cfg!(target_os = "windows") {
-            cmd.env("PS1", "\\$ ");
+            cmd.arg("-i");  // 交互式模式
+            cmd.arg("-l");  // 登录 shell
+
+            // 设置自定义初始化脚本路径
+            let home = std::env::var("HOME").unwrap_or_else(|_| ".".to_string());
+            let init_script = format!("{}/.huaan-terminal-init", home);
+            cmd.env("HUAAN_INIT_SCRIPT", init_script);
         }
+
+        cmd.cwd(std::env::var("HOME").unwrap_or_else(|_| ".".to_string()));
 
         // 启动子进程
         let _child = pair.slave.spawn_command(cmd)?;

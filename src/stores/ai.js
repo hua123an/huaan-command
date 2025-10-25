@@ -203,7 +203,7 @@ export const useAIStore = defineStore('ai', () => {
       stats.value.totalCalls++
 
       const openai = getClient()
-      
+
       const requestParams = {
         model: customModel,
         messages,
@@ -211,6 +211,14 @@ export const useAIStore = defineStore('ai', () => {
         max_tokens: maxTokens,
         stream
       }
+
+      console.log('📤 发送 AI 请求:', {
+        model: customModel,
+        messageCount: messages.length,
+        stream,
+        temperature,
+        max_tokens: maxTokens
+      })
 
       // 流式输出
       if (stream && onStream) {
@@ -234,11 +242,18 @@ export const useAIStore = defineStore('ai', () => {
 
       // 添加响应检查和日志
       console.log('🔍 AI 响应:', {
-        hasChoices: !!response.choices,
-        choicesLength: response.choices?.length,
-        firstChoice: response.choices?.[0],
+        responseExists: !!response,
+        responseType: typeof response,
+        hasChoices: !!response?.choices,
+        choicesLength: response?.choices?.length,
+        firstChoice: response?.choices?.[0],
         fullResponse: response
       })
+
+      // 检查响应本身是否存在
+      if (!response) {
+        throw new Error('AI 返回空响应')
+      }
 
       // 检查响应格式
       if (!response.choices || response.choices.length === 0) {
@@ -258,7 +273,12 @@ export const useAIStore = defineStore('ai', () => {
       
     } catch (error) {
       stats.value.failedCalls++
-      console.error('AI 调用失败:', error)
+      console.error('❌ AI 调用失败:', {
+        message: error.message,
+        name: error.name,
+        stack: error.stack,
+        fullError: error
+      })
       throw new Error(error.message || 'AI 调用失败')
     } finally {
       isGenerating.value = false

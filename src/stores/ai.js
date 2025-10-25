@@ -231,12 +231,29 @@ export const useAIStore = defineStore('ai', () => {
       
       // 非流式输出
       const response = await openai.chat.completions.create(requestParams)
-      
+
+      // 添加响应检查和日志
+      console.log('🔍 AI 响应:', {
+        hasChoices: !!response.choices,
+        choicesLength: response.choices?.length,
+        firstChoice: response.choices?.[0],
+        fullResponse: response
+      })
+
+      // 检查响应格式
+      if (!response.choices || response.choices.length === 0) {
+        throw new Error('AI 返回格式错误：没有 choices')
+      }
+
+      if (!response.choices[0].message) {
+        throw new Error('AI 返回格式错误：没有 message')
+      }
+
       stats.value.successCalls++
       if (response.usage) {
         stats.value.totalTokens += response.usage.total_tokens
       }
-      
+
       return response.choices[0].message.content
       
     } catch (error) {

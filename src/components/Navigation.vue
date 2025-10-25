@@ -31,9 +31,8 @@ const navigate = (name) => {
       </button>
     </div>
 
-    <!-- 中间应用标题 -->
+    <!-- 中间区域（保留空白用于未来扩展） -->
     <div class="nav-center">
-      <h1 class="app-title">Huaan Command</h1>
     </div>
 
     <!-- 右侧设置按钮 -->

@@ -6,21 +6,9 @@ export const useTerminalStore = defineStore('terminal', () => {
   const activeSessionId = ref(null)
   const autoRestore = ref(true)  // 自动恢复会话
 
-  const APP_VERSION = '2.0.0'  // 应用版本，用于清除不兼容的旧数据
-
   // 从 localStorage 加载会话
   function loadSessions() {
     try {
-      // 检查版本，如果是旧版本的数据（包含 terminalBuffer），清除它
-      const version = localStorage.getItem('app-version')
-      if (!version || version !== APP_VERSION) {
-        console.log(`检测到版本变更 (${version} -> ${APP_VERSION})，清除旧会话数据`)
-        localStorage.removeItem('terminal-sessions')
-        localStorage.removeItem('terminal-active-session')
-        localStorage.setItem('app-version', APP_VERSION)
-        return false
-      }
-
       const saved = localStorage.getItem('terminal-sessions')
       const savedActiveId = localStorage.getItem('terminal-active-session')
 
@@ -53,7 +41,7 @@ export const useTerminalStore = defineStore('terminal', () => {
   // 保存会话到 localStorage
   function saveSessions() {
     try {
-      // 保存完整的会话信息（不再保存 terminalBuffer，因为已切换到 BlockTerminalPane）
+      // 保存完整的会话信息
       const toSave = sessions.value.map(session => ({
         title: session.title,
         active: session.active,
@@ -65,7 +53,6 @@ export const useTerminalStore = defineStore('terminal', () => {
       }))
       localStorage.setItem('terminal-sessions', JSON.stringify(toSave))
       localStorage.setItem('terminal-active-session', activeSessionId.value)
-      localStorage.setItem('app-version', APP_VERSION)
     } catch (error) {
       console.error('保存终端会话失败:', error)
     }

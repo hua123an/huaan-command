@@ -523,7 +523,13 @@ const renderMarkdownToTerminal = (text) => {
 // 处理 AI 命令
 const handleAICommand = async (prompt) => {
   // 检测是否是复杂任务（项目分析、代码修改等）
-  const isComplexTask = /(熟悉|了解|分析|查看|理解).*(项目|代码|这个)|修改|添加.*文件|重构/.test(prompt)
+  // 改进的正则：更宽松地匹配项目相关问题
+  const isComplexTask = (
+    /(熟悉|了解|分析|查看|理解|介绍|讲解|说明).*(项目|代码|这个)/.test(prompt) ||
+    /(项目|代码).*(是什么|干什么|做什么|功能|作用|用途)/.test(prompt) ||
+    /(这个|当前).*(项目|代码)/.test(prompt) ||
+    /修改|添加.*文件|重构/.test(prompt)
+  )
 
   if (isComplexTask) {
     // 使用智能任务处理

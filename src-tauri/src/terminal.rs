@@ -61,29 +61,12 @@ impl TerminalManager {
                 // bash: 使用交互式模式，允许加载配置
                 cmd.arg("-i");
             } else if shell.contains("zsh") {
-                // zsh: 使用交互式模式，禁用配置加载
+                // zsh: 使用交互式模式，允许加载配置
                 cmd.arg("-i");
-                cmd.arg("--no-rcs");
             } else {
                 // 其他 shell：仅使用交互式模式
                 cmd.arg("-i");
             }
-        }
-
-        // 设置 UTF-8 编码环境变量（支持中文显示）
-        cmd.env("LANG", "zh_CN.UTF-8");
-        cmd.env("LC_ALL", "zh_CN.UTF-8");
-        cmd.env("LC_CTYPE", "zh_CN.UTF-8");
-
-        // 设置环境变量来控制 prompt（对所有 shell 生效）
-        cmd.env("PS1", "$ ");  // bash 使用简单的提示符
-        cmd.env("PS2", "> ");
-
-        // 对于 zsh，额外设置这些
-        if shell.contains("zsh") {
-            cmd.env("PROMPT", "$ ");
-            cmd.env("RPS1", "");
-            cmd.env("RPROMPT", "");
         }
 
         cmd.cwd(std::env::var("HOME").unwrap_or_else(|_| ".".to_string()));

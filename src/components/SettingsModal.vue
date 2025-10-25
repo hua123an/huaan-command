@@ -48,6 +48,7 @@ const aiSettings = ref({
 const terminalSettings = ref({
   fontSize: 14,
   fontFamily: "'SF Mono', Menlo, Monaco, monospace",
+  shell: 'bash', // 默认 shell 类型
   autoRestore: true,
   enableBlink: true
 })
@@ -363,14 +364,23 @@ onMounted(() => {
                 <option value="'Fira Code', monospace">Fira Code</option>
               </select>
             </div>
-            
+
+            <div class="config-group">
+              <label>终端类型</label>
+              <select v-model="settingsStore.settings.shell">
+                <option value="bash">Bash</option>
+                <option value="zsh">Zsh</option>
+              </select>
+              <p class="hint">切换终端类型将重新初始化所有终端会话</p>
+            </div>
+
             <div class="config-group">
               <label>
                 <input type="checkbox" v-model="terminalSettings.autoRestore" />
                 自动恢复会话
               </label>
             </div>
-            
+
             <div class="config-group">
               <label>
                 <input type="checkbox" v-model="terminalSettings.enableBlink" />
@@ -1110,5 +1120,12 @@ input:checked + .slider:before {
   font-size: 10px;
   color: var(--text-secondary);
   white-space: nowrap;
+}
+
+.hint {
+  font-size: 11px;
+  color: var(--text-tertiary);
+  margin-top: 4px;
+  opacity: 0.7;
 }
 </style>

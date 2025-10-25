@@ -224,7 +224,10 @@ onMounted(async () => {
   // 启动终端进程
   console.log('🟢 启动终端进程')
   try {
-    await invoke('start_terminal', { sessionId: props.session.id })
+    await invoke('start_terminal', {
+      sessionId: props.session.id,
+      shellType: settingsStore.settings.shell
+    })
     console.log('🟢 终端进程已启动')
 
     // 监听终端输出
@@ -287,6 +290,117 @@ onMounted(async () => {
     }
   })
 
+  // 监听 shell 类型变化，重新初始化终端
+  watch(() => settingsStore.settings.shell, async (newShell, oldShell) => {
+    if (oldShell && newShell !== oldShell) {
+      console.log(`🔄 Shell 类型从 ${oldShell} 变为 ${newShell}，重新初始化终端`)
+
+      // 保存当前会话数据
+      saveSessionData()
+
+      // 关闭旧终端
+      if (unlisten) unlisten()
+      if (terminal) terminal.dispose()
+
+      try {
+        await invoke('close_terminal', { sessionId: props.session.id })
+      } catch (err) {
+        console.error('关闭终端失败:', err)
+      }
+
+      // 重新初始化终端（延迟一下确保旧进程完全关闭）
+      setTimeout(async () => {
+        // 重新创建终端
+        terminal = new Terminal({
+          cursorBlink: true,
+          fontSize: 14,
+          fontFamily: 'SF Mono, Menlo, Monaco, Courier New, monospace',
+          theme: getTerminalTheme(),
+          allowTransparency: true,
+          lineHeight: 1.2,
+          letterSpacing: 0,
+          scrollback: 10000
+        })
+
+        fitAddon = new FitAddon()
+        terminal.loadAddon(fitAddon)
+        terminal.loadAddon(new WebLinksAddon())
+
+        terminal.open(terminalRef.value)
+        fitAddon.fit()
+        terminal.focus()
+
+        // 重新注册 onData 回调
+        terminal.onData(async (data) => {
+          try {
+            if (isModeSwitching.value) return
+
+            if (data === '\x01') {
+              toggleAIMode()
+              return
+            }
+
+            if (warpMode.value === 'ai' || aiMode.value) {
+              if (data === '\x7f' || data === '\b') {
+                if (currentInput.value.length > 0) {
+                  currentInput.value = currentInput.value.slice(0, -1)
+                  terminal.write('\b \b')
+                }
+              } else if (data !== '\r') {
+                currentInput.value += data
+                terminal.write(data)
+              }
+
+              if (data === '\r') {
+                if (currentInput.value.trim()) {
+                  terminal.write('\r\n')
+                  await handleAICommand(currentInput.value.trim())
+                } else {
+                  terminal.write('\r\n')
+                }
+                currentInput.value = ''
+                updateInput('')
+                return
+              }
+
+              return
+            }
+
+            await invoke('write_terminal', {
+              sessionId: props.session.id,
+              data
+            })
+          } catch (error) {
+            console.error('❌ 写入终端失败:', error)
+          }
+        })
+
+        // 启动终端进程
+        try {
+          await invoke('start_terminal', {
+            sessionId: props.session.id,
+            shellType: settingsStore.settings.shell
+          })
+
+          // 重新监听输出
+          unlisten = await listen(`terminal-output-${props.session.id}`, (event) => {
+            terminal.write(event.payload)
+
+            const lines = event.payload.split('\n')
+            terminalBuffer.value.push(...lines)
+            if (terminalBuffer.value.length > 1000) {
+              terminalBuffer.value = terminalBuffer.value.slice(-1000)
+            }
+          })
+
+          terminal.write(`\x1b[32m✓ 已切换到 ${newShell}\x1b[0m\r\n`)
+        } catch (error) {
+          terminal.write(`\x1b[31m错误: ${error}\x1b[0m\r\n`)
+        }
+      }, 200)
+    }
+  })
+
   // 监听系统主题变化（当主题为auto时）
   const darkModeQuery = window.matchMedia('(prefers-color-scheme: dark)')
   const handleSystemThemeChange = () => {
@@ -295,7 +409,7 @@ onMounted(async () => {
     }
   }
   darkModeQuery.addEventListener('change', handleSystemThemeChange)
-  
+
   // 保存 darkModeQuery 引用到组件作用域，以便在 onUnmounted 中清理
   window._terminalDarkModeQuery = darkModeQuery
   window._terminalThemeHandler = handleSystemThemeChange

@@ -32,9 +32,9 @@ struct ProjectStructure {
 }
 
 #[tauri::command]
-fn start_terminal(session_id: u64, app_handle: AppHandle, state: State<AppState>) -> Result<(), String> {
+fn start_terminal(session_id: u64, shell_type: Option<String>, app_handle: AppHandle, state: State<AppState>) -> Result<(), String> {
     state.terminal_manager
-        .start_terminal(session_id, app_handle)
+        .start_terminal(session_id, shell_type, app_handle)
         .map_err(|e| e.to_string())
 }
 
@@ -63,7 +63,7 @@ fn close_terminal(session_id: u64, state: State<AppState>) -> Result<(), String>
 #[tauri::command]
 async fn execute_command(command: String, working_dir: Option<String>) -> Result<String, String> {
     use tokio::process::Command;
-    
+
     let mut cmd = if cfg!(target_os = "windows") {
         let mut c = Command::new("cmd");
         c.args(&["/C", &command]);
@@ -73,15 +73,30 @@ async fn execute_command(command: String, working_dir: Option<String>) -> Result
         c.args(&["-c", &command]);
         c
     };
-    
-    // 设置工作目录
+
+    // 设置工作目录 (处理 ~ 展开)
     if let Some(dir) = working_dir {
-        cmd.current_dir(dir);
+        let expanded_dir = if dir == "~" || dir.starts_with("~/") {
+            // 展开 ~ 为用户主目录
+            let home = std::env::var("HOME")
+                .or_else(|_| std::env::var("USERPROFILE"))
+                .map_err(|e| e.to_string())?;
+
+            if dir == "~" {
+                home
+            } else {
+                dir.replacen("~", &home, 1)
+            }
+        } else {
+            dir
+        };
+
+        cmd.current_dir(&expanded_dir);
     }
-    
+
     // 执行命令
     let output = cmd.output().await.map_err(|e| e.to_string())?;
-    
+
     // 返回输出
     if output.status.success() {
         let stdout = String::from_utf8_lossy(&output.stdout).to_string();
@@ -98,6 +113,14 @@ async fn execute_command(command: String, working_dir: Option<String>) -> Result
 fn get_working_directory() -> Result<String, String> {
     std::env::current_dir()
         .map(|p| p.to_string_lossy().to_string())
+        .map_err(|e| e.to_string())
+}
+
+// 获取用户主目录
+#[tauri::command]
+fn get_home_directory() -> Result<String, String> {
+    std::env::var("HOME")
+        .or_else(|_| std::env::var("USERPROFILE"))
         .map_err(|e| e.to_string())
 }
 
@@ -305,6 +328,7 @@ pub fn run() {
             close_terminal,
             execute_command,
             get_working_directory,
+            get_home_directory,
             create_task,
             run_task,
             run_all_tasks,

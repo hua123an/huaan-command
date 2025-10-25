@@ -20,12 +20,17 @@ const scrollToBottom = async () => {
 // 发送消息
 const sendMessage = async () => {
   if (!userInput.value.trim()) return
-  
+
   const message = userInput.value.trim()
   userInput.value = ''
-  
+
   try {
-    await aiStore.chat(message)
+    await aiStore.chat(message, {
+      onStream: (delta, fullContent) => {
+        // 流式更新时自动滚动到底部
+        scrollToBottom()
+      }
+    })
     scrollToBottom()
   } catch (error) {
     console.error('Chat error:', error)
@@ -195,6 +200,7 @@ export default {
   border-left: 1px solid var(--border-color);
   backdrop-filter: blur(40px);
   -webkit-backdrop-filter: blur(40px);
+  overflow: hidden;
 }
 
 .chat-header {

@@ -395,11 +395,15 @@ export const useAIStore = defineStore('ai', () => {
       }
       chatMessages.value.push(assistantMsg)
 
+      // 获取消息在数组中的索引
+      const msgIndex = chatMessages.value.length - 1
+
       // 调用 AI（支持流式）
       const content = await callAI(messages, {
         stream: true,
         onStream: (delta, fullContent) => {
-          assistantMsg.content = fullContent
+          // 直接更新数组中的对象属性以触发响应式
+          chatMessages.value[msgIndex].content = fullContent
           if (options.onStream) {
             options.onStream(delta, fullContent)
           }
@@ -408,8 +412,8 @@ export const useAIStore = defineStore('ai', () => {
         maxTokens: 2000
       })
 
-      assistantMsg.content = content
-      return assistantMsg
+      chatMessages.value[msgIndex].content = content
+      return chatMessages.value[msgIndex]
 
     } catch (error) {
       // 移除临时消息

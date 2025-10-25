@@ -41,18 +41,29 @@ let fitAddon = null
 let unlisten = null
 
 // 初始化终端
-onMounted(async () => {
+const initTerminal = async () => {
   console.log('🟢 BlockTerminalPane 初始化开始')
   try {
-    // 创建 xterm.js 实例
+    // 如果已经有终端实例，先清理
+    if (terminal) {
+      terminal.dispose()
+      terminal = null
+    }
+
+    if (unlisten) {
+      unlisten()
+      unlisten = null
+    }
+
+    // 创建 xterm.js 实例（支持直接输入）
     terminal = new Terminal({
-      cursorBlink: true,
+      cursorBlink: true,  // 启用光标闪烁
       fontSize: 14,
       fontFamily: 'SF Mono, Menlo, Monaco, Courier New, monospace',
       theme: getTerminalTheme(),
       allowTransparency: true,
-      scrollback: 10000
-      // 移除 disableStdin，允许终端接收输入
+      scrollback: 10000,
+      disableStdin: false  // 启用标准输入，支持直接在终端输入
     })
 
     fitAddon = new FitAddon()
@@ -61,116 +72,26 @@ onMounted(async () => {
     terminal.open(terminalRef.value)
     fitAddon.fit()
 
-    console.log('🟢 聚焦终端')
-    terminal.focus()
-
-    console.log('🟢 注册 onData 回调')
-    // 注册键盘输入监听
-    terminal.onData(async (data) => {
-      console.log('🔵 终端收到输入:', data, '(charCode:', data.charCodeAt(0), ')')
-      console.log('🔵 当前缓存:', currentInput.value)
-
-      try {
-        let shouldSendToShell = true // 标记是否应该发送到 shell
-
-        // 处理回车键 - 检查是否是内置命令
-        if (data === '\r') {
-          const trimmedInput = currentInput.value.trim()
-          console.log('🎯 检测回车，当前输入:', trimmedInput)
-
-          // 检查是否是内置命令
-          if (isBuiltinCommand(trimmedInput)) {
-            console.log('✅ 检测到内置命令:', trimmedInput)
-            currentInput.value = '' // 立即清空输入缓存（在执行命令前）
-            console.log('🧹 已清空输入缓存（内置命令）')
-            terminal.write('\r\n')
-            await handleBuiltinCommand(trimmedInput)
-            shouldSendToShell = false // 不发送到 shell
-          } else {
-            // 普通命令，清空缓存（在发送到 shell 前）
-            currentInput.value = ''
-            console.log('🧹 已清空输入缓存（普通命令）')
-          }
-        }
-        // 退格键 - 从缓存中删除字符
-        else if (data === '\x7f' || data === '\b') {
-          if (currentInput.value.length > 0) {
-            // 检查删除前是否是冒号前缀（用于判断是否需要手动处理）
-            const wasColonPrefixed = currentInput.value.startsWith(':')
-
-            currentInput.value = currentInput.value.slice(0, -1)
-            console.log('⌫ 退格，当前缓存:', currentInput.value)
-
-            // 如果是冒号前缀命令，需要手动处理退格显示
-            if (wasColonPrefixed) {
-              shouldSendToShell = false
-              // 手动在终端显示退格效果（\b 光标后退，空格覆盖字符，\b 再次后退）
-              terminal.write('\b \b')
-              console.log('⌫ 冒号前缀命令退格，手动处理')
-            }
-          }
-        }
-        // Ctrl+C - 清空输入缓存
-        else if (data === '\x03') {
-          currentInput.value = ''
-          console.log('🛑 Ctrl+C，清空缓存')
-        }
-        // 普通字符 - 添加到缓存
-        else if (data !== '\r' && data.charCodeAt(0) >= 32) {
-          currentInput.value += data
-          console.log('➕ 添加字符，当前缓存:', currentInput.value)
-
-          // 🔥 关键修复：如果当前输入以 : 开头，说明可能是内置命令，不发送到 shell
-          if (currentInput.value.startsWith(':')) {
-            shouldSendToShell = false
-            // 手动在终端显示字符（因为不发送到 shell 就不会有回显）
-            terminal.write(data)
-            console.log('🚫 检测到冒号前缀，暂不发送到 shell，手动显示字符')
-          }
-        }
-
-        // 只有非内置命令才发送到 shell
-        if (shouldSendToShell) {
-          console.log('🔵 发送到 shell:', data)
-          await invoke('write_terminal', {
-            sessionId: props.session.id,
-            data
-          })
-          console.log('✅ 已发送')
-        } else {
-          console.log('🚫 不发送到 shell（内置命令或冒号前缀）')
-        }
-      } catch (error) {
-        console.error('❌ 发送失败:', error)
-      }
+    // 启动 PTY 终端（传递 shell 类型）
+    await invoke('start_terminal', {
+      sessionId: props.session.id,
+      shellType: settingsStore.settings.shell
     })
-    console.log('🟢 onData 回调已注册')
-
-    // 启动终端进程
-    console.log('🟢 启动终端进程')
-    await invoke('start_terminal', { sessionId: props.session.id })
-    console.log('🟢 终端进程已启动')
 
     // 监听终端输出
     unlisten = await listen(`terminal-output-${props.session.id}`, (event) => {
-      terminal.write(event.payload)
-
-      // 尝试从输出中提取当前目录
-      updateFromOutput(event.payload)
+      if (terminal) {
+        terminal.write(event.payload)
+      }
     })
 
-    // 等待一小段时间让 shell 完全启动
-    await new Promise(resolve => setTimeout(resolve, 300))
-
-    // 启动后自动清屏
-    try {
-      await invoke('write_terminal', {
+    // 监听终端输入并发送到 PTY
+    terminal.onData((data) => {
+      invoke('write_terminal', {
         sessionId: props.session.id,
-        data: 'clear\r'
+        data: data
       })
-    } catch (error) {
-      console.warn('清屏失败:', error)
-    }
+    })
 
     // 恢复会话数据
     const sessionData = terminalStore.getSessionData(props.session.id)
@@ -178,23 +99,28 @@ onMounted(async () => {
       warpMode.value = sessionData.warpMode || 'terminal'
       currentModel.value = sessionData.currentModel || aiStore.model
       currentDir.value = sessionData.currentDir || '~'
-      if (sessionData.buffer) {
-        terminal.write(sessionData.buffer)
-      }
+    } else {
+      // 新会话，确保 currentDir 有初始值
+      currentDir.value = '~'
     }
 
-    // 聚焦输入框
+    // 聚焦终端
     nextTick(() => {
-      inputComponent.value?.focus()
+      terminal.focus()
     })
-
-    // 监听窗口大小变化
-    window.addEventListener('resize', handleResize)
 
     console.log('🟢 初始化完成')
   } catch (error) {
     console.error('❌ 初始化终端失败:', error)
   }
+}
+
+onMounted(async () => {
+  // 初始化终端
+  await initTerminal()
+
+  // 监听窗口大小变化
+  window.addEventListener('resize', handleResize)
 })
 
 // 监听主题变化
@@ -202,6 +128,18 @@ watch(() => settingsStore.settings.theme, () => {
   if (terminal) {
     terminal.options.theme = getTerminalTheme()
   }
+})
+
+// 监听 shell 类型变化，重新初始化终端
+watch(() => settingsStore.settings.shell, async () => {
+  console.log('🔄 Shell 类型变化，重新初始化终端')
+  // 先关闭旧终端
+  await invoke('close_terminal', {
+    sessionId: props.session.id
+  }).catch(err => console.error('关闭终端失败:', err))
+
+  // 重新初始化
+  await initTerminal()
 })
 
 // 监听系统主题变化（当主题为auto时）
@@ -222,12 +160,23 @@ onUnmounted(() => {
   if (terminal) {
     terminal.dispose()
   }
+  // 关闭 PTY 终端
+  invoke('close_terminal', {
+    sessionId: props.session.id
+  }).catch(err => console.error('关闭终端失败:', err))
 })
 
 // 处理窗口大小变化
 const handleResize = () => {
   if (fitAddon) {
     fitAddon.fit()
+    // 通知 PTY 调整大小
+    const { cols, rows } = terminal
+    invoke('resize_terminal', {
+      sessionId: props.session.id,
+      cols,
+      rows
+    }).catch(err => console.error('调整终端大小失败:', err))
   }
 }
 
@@ -244,38 +193,24 @@ const handleSubmit = async (command) => {
     // AI 模式
     await handleAICommand(command)
   } else {
-    // 终端模式
-    await executeCommand(command)
-  }
-}
-
-// 聚焦终端
-const focusTerminal = () => {
-  if (terminal) {
-    // 检查终端是否有选中的文本
-    const selection = terminal.getSelection()
-    if (selection && selection.length > 0) {
-      // 有选中文本时不聚焦，避免干扰文本选择
-      console.log('🟢 检测到选中文本，不聚焦')
-      return
+    // 终端模式：将命令发送到 PTY
+    if (terminal) {
+      // 发送命令到 PTY（模拟用户输入 + 回车）
+      invoke('write_terminal', {
+        sessionId: props.session.id,
+        data: command + '\n'
+      })
     }
-
-    console.log('🟢 手动聚焦终端')
-    terminal.focus()
   }
 }
 
-// 执行终端命令
-const executeCommand = async (command) => {
-  try {
-    // 发送命令到终端
-    await invoke('write_terminal', {
-      sessionId: props.session.id,
-      data: command + '\r'
-    })
-  } catch (error) {
-    terminal.write(`\r\n\x1b[31m错误: ${error.message}\x1b[0m\r\n`)
-  }
+// 聚焦终端（直接聚焦终端区域）
+const focusTerminal = () => {
+  nextTick(() => {
+    if (terminal) {
+      terminal.focus()
+    }
+  })
 }
 
 // 处理内置命令
@@ -344,31 +279,9 @@ const handleBuiltinCommand = async (command) => {
     terminal.write('\r\n\r\n')
     terminal.scrollToBottom()
 
-    // ✅ 关键：确保终端重新获得焦点，以便接受后续输入
-    console.log('🎯 AI执行完成，重新聚焦终端')
-
-    setTimeout(async () => {
-      terminal.focus()
-      console.log('✅ 终端已重新聚焦，准备接受新输入')
-
-      // 发送回车触发新 prompt（现在不会有残留命令了）
-      try {
-        await invoke('write_terminal', {
-          sessionId: props.session.id,
-          data: '\r'
-        })
-        console.log('✅ 已发送回车，触发新 prompt')
-      } catch (error) {
-        console.error('❌ 初始化终端失败:', error)
-      }
-    }, 100)
-
   } catch (error) {
     terminal.write(`\r\n\x1b[31m❌ 执行失败: ${error.message}\x1b[0m\r\n`)
     terminal.scrollToBottom()
-
-    // 错误时也要重新聚焦
-    setTimeout(() => terminal.focus(), 50)
   }
 }
 
@@ -463,19 +376,9 @@ const handleMentionFile = () => {
 
 const handleFileSelect = async (file) => {
   if (file.isDir) {
-    // 更新当前目录状态
+    // 只更新当前目录状态即可
     currentDir.value = file.path
-
-    // 终端和 AI 模式都执行 cd 命令切换目录
-    try {
-      await invoke('write_terminal', {
-        sessionId: props.session.id,
-        data: `cd "${file.path}"\r`
-      })
-      console.log('✅ 已切换到目录:', file.path)
-    } catch (error) {
-      console.error('❌ 切换目录失败:', error)
-    }
+    console.log('✅ 已切换到目录:', file.path)
   }
   // 如果是文件，可以在这里处理插入文件路径到输入框
 }

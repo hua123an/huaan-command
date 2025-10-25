@@ -4,6 +4,7 @@ import { ref } from 'vue'
 export const useSettingsStore = defineStore('settings', () => {
   const settings = ref({
     theme: 'light', // 'dark' | 'light' | 'auto' - 默认使用浅色主题
+    shell: 'bash', // 'bash' | 'zsh' - 默认终端类型
     maxConcurrent: 10,
     enableNotifications: true,
     enableSound: true,
@@ -39,6 +40,7 @@ export const useSettingsStore = defineStore('settings', () => {
   function resetSettings() {
     settings.value = {
       theme: 'auto', // 默认跟随系统
+      shell: 'bash', // 默认 bash
       maxConcurrent: 10,
       enableNotifications: true,
       enableSound: true,

@@ -257,6 +257,17 @@ const goBack = () => {
         
         <div class="setting-item">
           <div class="setting-info">
+            <label>终端类型</label>
+            <p>切换终端类型将重新初始化所有终端会话</p>
+          </div>
+          <select v-model="settingsStore.settings.shell" @change="settingsStore.saveSettings()">
+            <option value="bash">Bash</option>
+            <option value="zsh">Zsh</option>
+          </select>
+        </div>
+
+        <div class="setting-item">
+          <div class="setting-info">
             <label>自动恢复会话</label>
             <p>重启应用时恢复终端标签页</p>
           </div>

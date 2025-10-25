@@ -70,6 +70,11 @@ impl TerminalManager {
             }
         }
 
+        // 设置 UTF-8 编码环境变量（支持中文显示）
+        cmd.env("LANG", "zh_CN.UTF-8");
+        cmd.env("LC_ALL", "zh_CN.UTF-8");
+        cmd.env("LC_CTYPE", "zh_CN.UTF-8");
+
         // 设置环境变量来控制 prompt（对所有 shell 生效）
         cmd.env("PS1", "$ ");  // bash 使用简单的提示符
         cmd.env("PS2", "> ");

@@ -82,6 +82,14 @@ const initTerminal = async () => {
     unlisten = await listen(`terminal-output-${props.session.id}`, (event) => {
       if (terminal) {
         terminal.write(event.payload)
+
+        // 尝试从输出中提取当前目录
+        updateFromOutput(event.payload)
+
+        // 保存更新后的目录到 store
+        if (currentDir.value) {
+          terminalStore.updateSessionCurrentDir(props.session.id, currentDir.value)
+        }
       }
     })
 

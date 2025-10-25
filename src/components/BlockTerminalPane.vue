@@ -325,7 +325,7 @@ const handleIntelligentTask = async (prompt) => {
 
     // 执行智能任务，静默执行命令不显示过程
     const result = await aiStore.executeIntelligentTask(prompt, workingDir, async (cmd, purpose) => {
-      const output = await invoke('execute_command', { command: cmd, workingDir })
+      const output = await invoke('execute_command', { command: cmd, working_dir: workingDir })
       return output
     })
 

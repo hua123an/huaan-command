@@ -10,6 +10,12 @@ export function useBuiltinCommands() {
    * value: AI 提示词模板或函数
    */
   const builtinCommands = {
+    // AI 助手介绍（无 : 前缀）
+    'claude': '你好！我是 Claude，Anthropic 开发的 AI 助手。\n\n我的能力：\n- 💡 回答编程和技术问题\n- 🛠️ 生成和解释命令\n- 🐛 诊断和修复错误\n- 📚 提供学习建议\n- 🎨 辅助创意和命名\n\n试试输入 :help 查看所有可用命令，或者直接问我问题！',
+    'kimi': '你好！我是 Kimi，月之暗面科技开发的 AI 助手。\n\n我可以帮你：\n- 🔧 解决技术难题\n- 📝 生成命令和脚本\n- 🔍 分析代码和日志\n- 💬 进行技术交流\n- 🚀 提升开发效率\n\n输入 :list 查看内置命令，或直接向我提问！',
+    'gpt': '你好！我是 GPT，OpenAI 开发的 AI 助手。\n\n我能为你：\n- ✨ 回答各类技术问题\n- 🎯 生成精准的命令\n- 🔧 调试和优化代码\n- 📖 提供学习资源\n- 🌟 激发创意灵感\n\n使用 :help 了解更多命令，或者随时向我提问！',
+    'deepseek': '你好！我是 DeepSeek，深度求索开发的 AI 助手。\n\n我的特长：\n- 🧠 深度理解技术问题\n- ⚡ 快速生成解决方案\n- 🔍 精准的代码分析\n- 📚 全面的知识支持\n- 🎓 耐心的技术指导\n\n输入 :help 查看命令列表，或直接开始对话！',
+
     // 娱乐类
     ':joke': '给我讲一个程序员笑话，要幽默有趣',
     ':smile': '给我一句励志的话，鼓舞人心的那种',
@@ -59,7 +65,8 @@ export function useBuiltinCommands() {
   const isBuiltinCommand = (input) => {
     if (!input || typeof input !== 'string') return false
     const command = input.trim().split(/\s+/)[0]
-    return command.startsWith(':') && builtinCommands.hasOwnProperty(command)
+    // 支持带 : 前缀的命令和不带前缀的 AI 助手名称
+    return builtinCommands.hasOwnProperty(command)
   }
 
   /**
@@ -90,6 +97,7 @@ export function useBuiltinCommands() {
    */
   const getHelpMessage = () => {
     const categories = {
+      'AI 助手': ['claude', 'kimi', 'gpt', 'deepseek'],
       '娱乐类': [':joke', ':smile', ':quote', ':zen'],
       '实用类': [':tip', ':debug', ':explain', ':how'],
       'Git 相关': [':commit', ':review', ':branch'],
@@ -106,9 +114,13 @@ export function useBuiltinCommands() {
       help += `${category}:\n`
       for (const cmd of commands) {
         const template = builtinCommands[cmd]
-        const description = typeof template === 'function'
-          ? template('').replace(/: $/, '')
-          : template
+        let description
+        if (typeof template === 'function') {
+          description = template('').replace(/: $/, '')
+        } else {
+          // 对于 AI 助手，只显示第一行（简短介绍）
+          description = template.split('\n')[0]
+        }
         help += `  ${cmd.padEnd(12)} - ${description}\n`
       }
       help += '\n'

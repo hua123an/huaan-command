@@ -55,13 +55,15 @@ impl TerminalManager {
         // 创建命令（交互式 shell）
         let mut cmd = CommandBuilder::new(&shell);
 
-        // 对于 bash 和 zsh，分别配置交互式模式
+        // 对于 bash 和 zsh，配置为登录 shell（会加载所有环境配置）
         if !cfg!(target_os = "windows") {
             if shell.contains("bash") {
-                // bash: 使用交互式模式，允许加载配置
+                // bash: -l (login shell) + -i (interactive)
+                cmd.arg("-l");
                 cmd.arg("-i");
             } else if shell.contains("zsh") {
-                // zsh: 使用交互式模式，允许加载配置
+                // zsh: -l (login shell) + -i (interactive)
+                cmd.arg("-l");
                 cmd.arg("-i");
             } else {
                 // 其他 shell：仅使用交互式模式

@@ -85,6 +85,14 @@ const initTerminal = async () => {
       }
     })
 
+    // 自动初始化：发送回车触发 prompt
+    setTimeout(() => {
+      invoke('write_terminal', {
+        sessionId: props.session.id,
+        data: '\r'
+      }).catch(err => console.error('初始化失败:', err))
+    }, 300)
+
     // 监听终端输入并发送到 PTY
     terminal.onData((data) => {
       invoke('write_terminal', {

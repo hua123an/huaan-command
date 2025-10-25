@@ -473,24 +473,35 @@ export const useAIStore = defineStore('ai', () => {
    */
   async function analyzeProjectWithCommands(workingDir, executeCommand) {
     try {
-      // 精简命令列表（快速响应）
+      console.log('📂 开始分析项目:', workingDir)
+
+      // 扩展命令列表，获取更多项目信息
       const commands = [
         { cmd: 'ls -la', purpose: '查看目录结构' },
-        { cmd: 'cat README.md 2>/dev/null || cat readme.md 2>/dev/null || echo "无README文件"', purpose: '读取项目说明' },
-        { cmd: 'cat package.json 2>/dev/null || echo "无package.json"', purpose: '读取配置文件' }
+        { cmd: 'cat README.md 2>/dev/null || cat readme.md 2>/dev/null || cat README 2>/dev/null || echo "无README文件"', purpose: '读取项目说明' },
+        { cmd: 'cat package.json 2>/dev/null || echo "无package.json"', purpose: '读取package.json配置' },
+        { cmd: 'cat Cargo.toml 2>/dev/null || echo "无Cargo.toml"', purpose: '读取Rust项目配置' },
+        { cmd: 'cat tauri.conf.json 2>/dev/null || cat src-tauri/tauri.conf.json 2>/dev/null || echo "无tauri配置"', purpose: '读取Tauri配置' },
+        { cmd: 'ls -la src/ 2>/dev/null || echo "无src目录"', purpose: '查看src目录' },
+        { cmd: 'ls -la src-tauri/src/ 2>/dev/null || echo "无src-tauri目录"', purpose: '查看Rust源码目录' },
+        { cmd: 'find . -name "*.vue" -o -name "*.js" -o -name "*.ts" | head -20', purpose: '查找主要源文件' },
+        { cmd: 'cat .gitignore 2>/dev/null | head -20 || echo "无.gitignore"', purpose: '查看git配置' }
       ]
 
       // 执行命令收集信息
       const commandResults = []
       for (const { cmd, purpose } of commands) {
         try {
+          console.log(`  ⚙️ 执行命令: ${cmd}`)
           const output = await executeCommand(cmd, purpose)
+          console.log(`  ✅ ${purpose}: ${output.length} 字符`)
           commandResults.push({
             command: cmd,
             purpose,
-            output: output.substring(0, 3000) // 限制输出长度
+            output: output.substring(0, 5000) // 增加输出长度限制
           })
         } catch (error) {
+          console.error(`  ❌ ${purpose} 失败:`, error)
           commandResults.push({
             command: cmd,
             purpose,
@@ -499,37 +510,64 @@ export const useAIStore = defineStore('ai', () => {
         }
       }
 
-      // Step 3: AI 分析收集到的信息（精简提示词）
-      const analysisPrompt = `基于以下信息，快速分析这个项目：
+      console.log('📊 命令执行完成，收集了', commandResults.length, '个结果')
 
-${commandResults.map(r => `**${r.purpose}:**
+      // 构建更详细的分析提示词
+      const analysisPrompt = `你是一个资深的代码架构师。基于以下终端命令的输出，深入分析这个项目：
+
+**命令输出：**
+${commandResults.map(r => `
+### ${r.purpose}
 \`\`\`
 ${r.output}
 \`\`\`
 `).join('\n')}
 
-请简洁地回答：
-1. **项目类型**：是什么类型的项目？
-2. **技术栈**：使用了哪些主要技术？
-3. **主要功能**：核心功能是什么？
-4. **快速上手**：如何开始使用/开发？
+**请详细分析：**
 
-用 Markdown 格式，保持简洁。`
+1. **项目概述**
+   - 项目名称和版本
+   - 项目类型（Web应用/桌面应用/CLI工具等）
+   - 主要用途和目标用户
+
+2. **技术架构**
+   - 前端框架和版本
+   - 后端技术栈
+   - 构建工具链
+   - 关键依赖库
+
+3. **项目结构**
+   - 核心目录说明
+   - 主要源文件类型
+   - 配置文件作用
+
+4. **开发指南**
+   - 环境要求
+   - 安装步骤
+   - 开发命令
+   - 构建和部署流程
+
+5. **特色功能**
+   - 核心功能模块
+   - 技术亮点
+   - 创新之处
+
+用清晰的 Markdown 格式输出，包含代码块、列表和强调。要具体、深入，不要泛泛而谈。`
 
       const analysisMessages = [
         {
           role: 'system',
-          content: '你是一个专业的代码分析专家，擅长快速理解项目结构和技术栈。'
+          content: '你是一个专业的代码分析专家，擅长快速理解项目结构和技术栈。请提供详细、深入的分析，而不是泛泛而谈。'
         },
         {
           role: 'user',
           content: analysisPrompt
         }
       ]
-      
+
       const analysis = await callAI(analysisMessages, {
         temperature: 0.3,
-        maxTokens: 3000
+        maxTokens: 8000  // 增加token限制，支持更详细的分析
       })
       
       return {

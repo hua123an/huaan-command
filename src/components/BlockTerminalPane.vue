@@ -162,15 +162,14 @@ onMounted(async () => {
     // 等待一小段时间让 shell 完全启动
     await new Promise(resolve => setTimeout(resolve, 300))
 
-    // 设置简洁的 prompt（只显示 ❯ 符号）
+    // 启动后自动清屏
     try {
-      // Source 自定义初始化脚本（静默执行，不显示输出）
       await invoke('write_terminal', {
         sessionId: props.session.id,
-        data: 'source ~/.huaan-terminal-init 2>/dev/null; clear\r'
+        data: 'clear\r'
       })
     } catch (error) {
-      console.warn('设置 prompt 失败:', error)
+      console.warn('清屏失败:', error)
     }
 
     // 恢复会话数据

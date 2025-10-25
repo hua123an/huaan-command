@@ -34,6 +34,7 @@ const showFilePicker = ref(false)
 const terminalRef = ref(null)
 const inputComponent = ref(null)
 const currentInput = ref('') // 跟踪当前输入的命令
+const conversationHistory = ref([]) // 对话历史
 
 // 终端实例
 let terminal = null
@@ -115,9 +116,11 @@ const initTerminal = async () => {
       warpMode.value = sessionData.warpMode || 'terminal'
       currentModel.value = sessionData.currentModel || aiStore.model
       currentDir.value = sessionData.currentDir || '~'
+      conversationHistory.value = sessionData.conversationHistory || []
     } else {
       // 新会话，确保 currentDir 有初始值
       currentDir.value = '~'
+      conversationHistory.value = []
     }
 
     // 聚焦终端
@@ -227,6 +230,178 @@ const focusTerminal = () => {
       terminal.focus()
     }
   })
+}
+
+// 格式化 Markdown 单行（用于流式输出）
+const formatMarkdownLine = (line) => {
+  let formatted = line
+
+  if (formatted.match(/^```/)) {
+    return `\x1b[90m${formatted}\x1b[0m`
+  }
+
+  if (formatted.match(/^### /)) {
+    formatted = formatted.replace(/^### (.+)$/, '\x1b[1m\x1b[35m▸ $1\x1b[0m')
+  } else if (formatted.match(/^## /)) {
+    formatted = formatted.replace(/^## (.+)$/, '\x1b[1m\x1b[36m▶ $1\x1b[0m')
+  } else if (formatted.match(/^# /)) {
+    formatted = formatted.replace(/^# (.+)$/, '\x1b[1m\x1b[32m● $1\x1b[0m')
+  } else if (formatted.match(/^(\s*)[-*+] /)) {
+    formatted = formatted.replace(/^(\s*)[-*+] (.+)$/, '$1\x1b[36m●\x1b[0m $2')
+  } else if (formatted.match(/^(\s*)(\d+)\. /)) {
+    formatted = formatted.replace(/^(\s*)(\d+)\. (.+)$/, '$1\x1b[36m$2.\x1b[0m $3')
+  }
+
+  formatted = formatted.replace(/`([^`]+)`/g, '\x1b[43m\x1b[30m $1 \x1b[0m')
+  formatted = formatted.replace(/\*\*([^*]+)\*\*/g, '\x1b[1m$1\x1b[0m')
+
+  return formatted
+}
+
+// 格式化终端输出（处理换行和特殊字符）
+const formatTerminalOutput = (text) => {
+  // 先处理代码块
+  let formatted = text.replace(/```(\w*)\n([\s\S]*?)```/g, (match, lang, code) => {
+    const langLabel = lang ? `[${lang}]` : '[code]'
+    return `\n\x1b[90m╭─ ${langLabel} ────────────────\x1b[0m\n\x1b[33m${code.trim()}\x1b[0m\n\x1b[90m╰────────────────────────────\x1b[0m\n`
+  })
+
+  // 处理行内代码
+  formatted = formatted.replace(/`([^`]+)`/g, '\x1b[43m\x1b[30m $1 \x1b[0m')
+
+  // 处理标题
+  formatted = formatted.replace(/^### (.+)$/gm, '\x1b[1m\x1b[35m▸ $1\x1b[0m')
+  formatted = formatted.replace(/^## (.+)$/gm, '\x1b[1m\x1b[36m▶ $1\x1b[0m')
+  formatted = formatted.replace(/^# (.+)$/gm, '\x1b[1m\x1b[32m● $1\x1b[0m')
+
+  // 处理粗体
+  formatted = formatted.replace(/\*\*([^*]+)\*\*/g, '\x1b[1m$1\x1b[0m')
+
+  // 处理无序列表
+  formatted = formatted.replace(/^(\s*)[-*+] (.+)$/gm, (match, indent, text) => {
+    return `${indent}\x1b[36m●\x1b[0m ${text}`
+  })
+
+  // 处理有序列表
+  formatted = formatted.replace(/^(\s*)(\d+)\. (.+)$/gm, (match, indent, num, text) => {
+    return `${indent}\x1b[36m${num}.\x1b[0m ${text}`
+  })
+
+  // 将所有 \n 替换为 \r\n（终端换行）
+  formatted = formatted.replace(/\n/g, '\r\n')
+
+  return formatted
+}
+
+// 智能任务处理（项目分析、代码修改等）
+const handleIntelligentTask = async (prompt) => {
+  // 添加到对话历史
+  conversationHistory.value.push({
+    role: 'user',
+    content: prompt
+  })
+
+  try {
+    // 获取终端当前工作目录
+    let workingDir
+
+    if (currentDir.value && currentDir.value !== '~') {
+      workingDir = currentDir.value
+      terminal.write(`\x1b[90m💡 终端已准备就绪\x1b[0m\r\n`)
+    } else {
+      try {
+        workingDir = await invoke('get_home_dir')
+        currentDir.value = workingDir
+        terminal.write(`\x1b[90m💡 终端已准备就绪\x1b[0m\r\n`)
+      } catch {
+        terminal.write(`\x1b[31m❌ 无法获取工作目录，请用 @ 选择项目目录\x1b[0m\r\n`)
+        return
+      }
+    }
+
+    // 显示简洁提示
+    terminal.write(`\x1b[36m📂 分析目录: ${workingDir}\x1b[0m\r\n`)
+    terminal.write(`\x1b[90m🔍 正在分析项目...\x1b[0m\r\n\r\n`)
+
+    // 执行智能任务，静默执行命令不显示过程
+    const result = await aiStore.executeIntelligentTask(prompt, workingDir, async (cmd, purpose) => {
+      const output = await invoke('execute_command', { command: cmd, workingDir })
+      return output
+    })
+
+    terminal.write(`\x1b[36m🤖 AI 分析:\x1b[0m\r\n\r\n`)
+
+    if (result.type === 'project_analysis') {
+      // 流式显示项目分析结果
+      const lines = result.analysis.split('\n')
+      let isInCodeBlock = false
+
+      for (const line of lines) {
+        if (line.trim().startsWith('```')) {
+          isInCodeBlock = !isInCodeBlock
+        }
+
+        const formatted = formatMarkdownLine(line)
+        terminal.write(formatted + '\r\n')
+        terminal.scrollToBottom()
+
+        // 添加延迟产生流式效果
+        if (line.trim() === '') {
+          await new Promise(resolve => setTimeout(resolve, 10))
+        } else if (isInCodeBlock) {
+          await new Promise(resolve => setTimeout(resolve, 20))
+        } else {
+          await new Promise(resolve => setTimeout(resolve, 50))
+        }
+      }
+
+      conversationHistory.value.push({
+        role: 'assistant',
+        content: result.analysis
+      })
+    } else if (result.type === 'code_modification') {
+      // 显示代码修改结果
+      terminal.write(`\x1b[32m✓ 代码修改完成\x1b[0m\r\n\r\n`)
+
+      if (result.modifications && result.modifications.length > 0) {
+        terminal.write(`\x1b[1m修改的文件:\x1b[0m\r\n`)
+        result.modifications.forEach(mod => {
+          terminal.write(`  \x1b[36m●\x1b[0m ${mod.file}\r\n`)
+        })
+        terminal.write('\r\n')
+      }
+
+      if (result.summary) {
+        const formatted = formatTerminalOutput(result.summary)
+        terminal.write(formatted)
+      }
+
+      conversationHistory.value.push({
+        role: 'assistant',
+        content: result.summary || '代码修改完成'
+      })
+    } else if (result.type === 'simple_command') {
+      // 显示命令执行结果
+      if (result.output) {
+        terminal.write(result.output.replace(/\n/g, '\r\n'))
+      }
+
+      conversationHistory.value.push({
+        role: 'assistant',
+        content: result.output || '命令执行完成'
+      })
+    }
+
+    terminal.write('\r\n')
+    terminal.scrollToBottom()
+
+    // 保存会话数据
+    terminalStore.updateSessionConversation(props.session.id, conversationHistory.value)
+
+  } catch (error) {
+    terminal.write(`\r\n\x1b[31m❌ 智能任务失败: ${error.message}\x1b[0m\r\n`)
+    terminal.scrollToBottom()
+  }
 }
 
 // 处理内置命令
@@ -347,27 +522,44 @@ const renderMarkdownToTerminal = (text) => {
 
 // 处理 AI 命令
 const handleAICommand = async (prompt) => {
-  // 在终端显示用户输入
-  terminal.write(`\r\n\x1b[36m🤖 ${prompt}\x1b[0m\r\n\r\n`)
-  
-  let accumulatedText = ''
-  
-  try {
-    // 调用 AI 生成响应
-    const response = await aiStore.generateCommand(prompt, {
-      stream: true,
-      onStream: (delta) => {
-        accumulatedText += delta
-        
-        // 实时渲染 markdown
-        const rendered = renderMarkdownToTerminal(delta)
-        terminal.write(rendered)
-      }
-    })
-    
-    terminal.write('\r\n\r\n')
-  } catch (error) {
-    terminal.write(`\r\n\x1b[31mAI 错误: ${error.message}\x1b[0m\r\n`)
+  // 检测是否是复杂任务（项目分析、代码修改等）
+  const isComplexTask = /(熟悉|了解|分析|查看|理解).*(项目|代码|这个)|修改|添加.*文件|重构/.test(prompt)
+
+  if (isComplexTask) {
+    // 使用智能任务处理
+    terminal.write(`\r\n\x1b[36m🤖 ${prompt}\x1b[0m\r\n\r\n`)
+    await handleIntelligentTask(prompt)
+  } else {
+    // 简单对话模式
+    terminal.write(`\r\n\x1b[36m🤖 ${prompt}\x1b[0m\r\n\r\n`)
+
+    let accumulatedText = ''
+
+    try {
+      // 调用 AI 生成响应
+      const response = await aiStore.generateCommand(prompt, {
+        stream: true,
+        onStream: (delta) => {
+          accumulatedText += delta
+
+          // 实时渲染 markdown
+          const rendered = renderMarkdownToTerminal(delta)
+          terminal.write(rendered)
+        }
+      })
+
+      terminal.write('\r\n\r\n')
+
+      // 保存到对话历史
+      conversationHistory.value.push(
+        { role: 'user', content: prompt },
+        { role: 'assistant', content: accumulatedText }
+      )
+      terminalStore.updateSessionConversation(props.session.id, conversationHistory.value)
+
+    } catch (error) {
+      terminal.write(`\r\n\x1b[31mAI 错误: ${error.message}\x1b[0m\r\n`)
+    }
   }
 }
 

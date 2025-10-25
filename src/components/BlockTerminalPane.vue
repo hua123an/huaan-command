@@ -164,17 +164,10 @@ onMounted(async () => {
 
     // 设置简洁的 prompt（只显示 ❯ 符号）
     try {
-      // Source 自定义初始化脚本
+      // Source 自定义初始化脚本（静默执行，不显示输出）
       await invoke('write_terminal', {
         sessionId: props.session.id,
-        data: 'source ~/.huaan-terminal-init\r'
-      })
-      // 等待一下
-      await new Promise(resolve => setTimeout(resolve, 100))
-      // 清屏，隐藏设置命令
-      await invoke('write_terminal', {
-        sessionId: props.session.id,
-        data: 'clear\r'
+        data: 'source ~/.huaan-terminal-init 2>/dev/null; clear\r'
       })
     } catch (error) {
       console.warn('设置 prompt 失败:', error)

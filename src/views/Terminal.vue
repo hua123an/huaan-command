@@ -41,7 +41,10 @@ useShortcuts({
   },
   onClear: () => {
     // 清空当前终端
-    // TODO: 实现清空功能
+    const activeSession = store.sessions.find(s => s.id === store.activeSessionId)
+    if (activeSession) {
+      store.updateSessionBuffer(activeSession.id, [])
+    }
   },
   onToggleAI: () => {
     // 切换 AI 模式
@@ -50,7 +53,14 @@ useShortcuts({
 })
 
 const useSnippet = (command) => {
-  // TODO: 将命令发送到当前活动的终端
+  // 将命令发送到当前活动的终端
+  const activeSession = store.sessions.find(s => s.id === store.activeSessionId)
+  if (activeSession && currentTerminalRef.value && currentTerminalRef.value.length > 0) {
+    const terminal = currentTerminalRef.value.find(t => t?.session?.id === activeSession.id)
+    if (terminal?.executeCommand) {
+      terminal.executeCommand(command)
+    }
+  }
   showSnippets.value = false
 }
 </script>

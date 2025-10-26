@@ -1,7 +1,9 @@
 import { defineStore } from 'pinia'
 import { ref, watch } from 'vue'
+import { useLogsStore } from './logs'
 
 export const useTerminalStore = defineStore('terminal', () => {
+  const logsStore = useLogsStore()
   const sessions = ref([])
   const activeSessionId = ref(null)
   const autoRestore = ref(true)  // 自动恢复会话
@@ -28,12 +30,12 @@ export const useTerminalStore = defineStore('terminal', () => {
             activeSessionId.value = sessions.value[0].id
           }
 
-          console.log(`✓ 恢复了 ${sessions.value.length} 个终端会话`)
+          logsStore.success(`恢复了 ${sessions.value.length} 个终端会话`)
           return true
         }
       }
     } catch (error) {
-      console.error('加载终端会话失败:', error)
+      logsStore.error(`加载终端会话失败: ${error.message || error}`)
     }
     return false
   }
@@ -49,18 +51,20 @@ export const useTerminalStore = defineStore('terminal', () => {
         currentModel: session.currentModel || 'gpt-4o-mini',
         conversationHistory: session.conversationHistory || [],
         commandHistory: session.commandHistory || [],
-        currentDir: session.currentDir || '~'
+        currentDir: session.currentDir || '~',
+        initialized: session.initialized || false  // 添加初始化状态
       }))
       localStorage.setItem('terminal-sessions', JSON.stringify(toSave))
       localStorage.setItem('terminal-active-session', activeSessionId.value)
     } catch (error) {
-      console.error('保存终端会话失败:', error)
+      logsStore.error(`保存终端会话失败: ${error.message || error}`)
     }
   }
 
   function createSession(customTitle = null) {
     const id = Date.now() + sessions.value.length
     const title = customTitle || `终端 ${sessions.value.length + 1}`
+    
     sessions.value.push({
       id,
       title,
@@ -69,9 +73,15 @@ export const useTerminalStore = defineStore('terminal', () => {
       currentModel: 'gpt-4o-mini',
       conversationHistory: [],
       commandHistory: [],
-      currentDir: '~'
+      currentDir: '~',
+      initialized: false  // 新会话默认未初始化
     })
+    
+    // 立即设置为活动会话
     activeSessionId.value = id
+    
+    logsStore.success(`创建新终端: ${title}`)
+    
     saveSessions()
     return id
   }
@@ -79,10 +89,12 @@ export const useTerminalStore = defineStore('terminal', () => {
   function closeSession(id) {
     const index = sessions.value.findIndex(s => s.id === id)
     if (index !== -1) {
+      const session = sessions.value[index]
       sessions.value.splice(index, 1)
       if (activeSessionId.value === id && sessions.value.length > 0) {
         activeSessionId.value = sessions.value[0].id
       }
+      logsStore.info(`关闭终端: ${session.title}`)
       saveSessions()
     }
   }
@@ -145,6 +157,15 @@ export const useTerminalStore = defineStore('terminal', () => {
     }
   }
 
+  // 更新会话的初始化状态
+  function updateSessionInitialized(id, initialized) {
+    const session = sessions.value.find(s => s.id === id)
+    if (session) {
+      session.initialized = initialized
+      saveSessions()
+    }
+  }
+
   // 更新会话的命令历史
   function updateSessionCommandHistory(id, history) {
     const session = sessions.value.find(s => s.id === id)
@@ -185,6 +206,7 @@ export const useTerminalStore = defineStore('terminal', () => {
     updateSessionBuffer,
     updateSessionCommandHistory,
     updateSessionCurrentDir,
+    updateSessionInitialized,  // 添加初始化状态更新方法
     getSessionData,
     loadSessions,
     saveSessions,

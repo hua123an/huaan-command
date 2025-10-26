@@ -317,6 +317,7 @@ pub fn run() {
 
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_http::init())
         .manage(AppState {
             terminal_manager,
             task_manager,

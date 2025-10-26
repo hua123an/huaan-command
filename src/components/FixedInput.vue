@@ -9,7 +9,7 @@ const props = defineProps({
   currentDir: String // 当前目录路径
 })
 
-const emit = defineEmits(['submit', 'update:mode', 'mention-file'])
+const emit = defineEmits(['submit', 'update:mode', 'mention-file', 'refresh-dir'])
 
 const inputRef = ref(null)
 const inputValue = ref('')
@@ -22,25 +22,30 @@ const searchIndex = ref(0)
 
 // 获取当前目录的最后一级名称
 const getCurrentDirName = () => {
-  if (!props.currentDir) return ''
+  if (!props.currentDir) return '~'
 
-  // 处理 ~ 符号
+  // 处理 ~ 符号（单独的~）
   if (props.currentDir === '~') return '~'
 
   // 去掉末尾的斜杠
-  const cleanPath = props.currentDir.replace(/\/$/, '')
+  const cleanPath = props.currentDir.replace(/\/+$/, '')
 
   // 获取最后一级目录
   const parts = cleanPath.split('/')
   const lastPart = parts[parts.length - 1]
 
-  // 如果是根目录或空，返回完整路径
-  return lastPart || props.currentDir
+  // 如果是根目录或空，返回 /
+  return lastPart || '/'
 }
 
 // 点击目录标签，打开文件选择器
 const handleDirClick = () => {
   emit('mention-file')
+}
+
+// 刷新当前目录（执行 pwd）
+const refreshCurrentDir = () => {
+  emit('refresh-dir')
 }
 
 // 自动聚焦
@@ -223,16 +228,6 @@ defineExpose({
 <template>
   <div class="fixed-input" :class="{ disabled }">
     <div class="input-container">
-      <!-- 当前目录显示（可点击） - 终端和AI模式都显示 -->
-      <button
-        v-if="currentDir"
-        class="current-dir"
-        @click="handleDirClick"
-        :title="`当前目录: ${currentDir}\n点击选择文件夹`"
-      >
-        📁 {{ getCurrentDirName() }}
-      </button>
-
       <!-- 输入框 -->
       <input
         ref="inputRef"
@@ -296,29 +291,36 @@ defineExpose({
   transition: all 0.2s;
 }
 
-.current-dir {
+/* 文件夹图标按钮（带目录名） */
+.folder-icon-btn {
   background: transparent;
-  color: var(--text-secondary);
-  padding: 6px 12px;
   border: 1px solid var(--border-color);
   border-radius: 8px;
-  font-size: 13px;
-  font-family: 'SF Mono', Monaco, monospace;
-  font-weight: 500;
-  white-space: nowrap;
+  font-size: 14px;
   cursor: pointer;
-  transition: all 0.2s ease;
+  padding: 6px 10px;
   display: flex;
   align-items: center;
   gap: 6px;
+  transition: all 0.2s ease;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  font-family: 'SF Mono', Monaco, monospace;
 }
 
-.current-dir:hover {
+.folder-icon-btn:hover {
   background: var(--bg-hover);
   border-color: var(--accent-color);
   color: var(--text-primary);
   transform: translateY(-1px);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.dir-name {
+  font-size: 13px;
+  font-weight: 500;
+  max-width: 150px;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .input-container:focus-within {

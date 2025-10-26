@@ -11,6 +11,7 @@ import FilePickerModal from './FilePickerModal.vue'
 import { useAIStore } from '../stores/ai'
 import { useTerminalStore } from '../stores/terminal'
 import { useSettingsStore } from '../stores/settings'
+import { useLogsStore } from '../stores/logs'
 import { useTheme } from '../composables/useTheme'
 import { useBuiltinCommands } from '../composables/useBuiltinCommands'
 import { useDirectoryTracking } from '../composables/useDirectoryTracking'
@@ -23,6 +24,7 @@ const props = defineProps({
 const aiStore = useAIStore()
 const terminalStore = useTerminalStore()
 const settingsStore = useSettingsStore()
+const logsStore = useLogsStore()
 const { getTerminalTheme } = useTheme()
 const { isBuiltinCommand, getCommandPrompt, getHelpMessage } = useBuiltinCommands()
 const { currentDir, updateFromOutput } = useDirectoryTracking()
@@ -43,8 +45,13 @@ let unlisten = null
 
 // 初始化终端
 const initTerminal = async () => {
-  console.log('🟢 BlockTerminalPane 初始化开始')
   try {
+    // 检查 DOM 元素是否存在
+    if (!terminalRef.value) {
+      console.error('❌ 终端容器 DOM 元素不存在！')
+      return
+    }
+    
     // 如果已经有终端实例，先清理
     if (terminal) {
       terminal.dispose()
@@ -79,13 +86,53 @@ const initTerminal = async () => {
       shellType: settingsStore.settings.shell
     })
 
+    // 标记是否是初始输出（用于过滤系统欢迎信息）
+    let isInitialOutput = true
+    let initialOutputBuffer = ''
+
     // 监听终端输出
     unlisten = await listen(`terminal-output-${props.session.id}`, (event) => {
       if (terminal) {
-        terminal.write(event.payload)
+        let output = event.payload
+
+        // 初始阶段：收集并过滤系统欢迎信息
+        if (isInitialOutput) {
+          initialOutputBuffer += output
+
+          // 检测是否已经收到了第一个提示符（表示初始化完成）
+          // 匹配 "> " 提示符或用户名@主机名格式的提示符
+          const hasPrompt = initialOutputBuffer.match(/>\s*$/) ||
+                           initialOutputBuffer.match(/[\$%#]\s*$/) ||
+                           initialOutputBuffer.match(/[a-zA-Z0-9_-]+@[a-zA-Z0-9_-]+/)
+
+          if (hasPrompt) {
+            // 初始化完成，过滤掉系统欢迎信息，只保留提示符
+            isInitialOutput = false
+
+            // 移除所有已知的系统欢迎信息
+            let cleanOutput = initialOutputBuffer
+              .replace(/The default interactive shell is now.*?\n/g, '')
+              .replace(/To update your account to use.*?\n/g, '')
+              .replace(/For more details.*?\n/g, '')
+              .replace(/chsh -s.*?\n/g, '')
+              .replace(/https?:\/\/[^\s]+/g, '')  // 移除 URL
+              .trim()
+
+            // 只显示提示符
+            if (cleanOutput) {
+              terminal.write(cleanOutput)
+            }
+            initialOutputBuffer = ''
+          }
+          // 如果还没收到提示符，继续收集（不显示）
+          return
+        }
+
+        // 初始化完成后，正常显示所有输出
+        terminal.write(output)
 
         // 尝试从输出中提取当前目录
-        updateFromOutput(event.payload)
+        updateFromOutput(output)
 
         // 保存更新后的目录到 store
         if (currentDir.value) {
@@ -94,43 +141,46 @@ const initTerminal = async () => {
       }
     })
 
-    // 自动初始化：发送回车触发 prompt
-    setTimeout(() => {
-      invoke('write_terminal', {
-        sessionId: props.session.id,
-        data: '\r'
-      }).catch(err => console.error('初始化失败:', err))
-    }, 300)
-
     // 监听终端输入并发送到 PTY
     terminal.onData((data) => {
+      // 直接发送所有输入到 PTY，不做任何拦截
       invoke('write_terminal', {
         sessionId: props.session.id,
         data: data
       })
     })
 
-    // 恢复会话数据
+    // 恢复会话数据或初始化新会话
     const sessionData = terminalStore.getSessionData(props.session.id)
+
+    // 先获取实际的 HOME 目录
+    let actualHome = '~'
+    try {
+      actualHome = await invoke('get_home_dir')
+    } catch (error) {
+      console.warn('无法获取 HOME 目录:', error)
+    }
+
     if (sessionData) {
       warpMode.value = sessionData.warpMode || 'terminal'
       currentModel.value = sessionData.currentModel || aiStore.model
-      currentDir.value = sessionData.currentDir || '~'
+      // 如果保存的是 ~，展开为实际路径
+      currentDir.value = sessionData.currentDir === '~' ? actualHome : (sessionData.currentDir || actualHome)
       conversationHistory.value = sessionData.conversationHistory || []
     } else {
-      // 新会话，确保 currentDir 有初始值
-      currentDir.value = '~'
+      // 新会话，使用实际的 HOME 目录
+      currentDir.value = actualHome
       conversationHistory.value = []
+      // 保存到 store
+      terminalStore.updateSessionCurrentDir(props.session.id, actualHome)
     }
 
     // 聚焦终端
     nextTick(() => {
       terminal.focus()
     })
-
-    console.log('🟢 初始化完成')
   } catch (error) {
-    console.error('❌ 初始化终端失败:', error)
+    logsStore.error(`初始化终端失败: ${error.message || error}`)
   }
 }
 
@@ -169,6 +219,22 @@ const handleSystemThemeChange = () => {
   }
 }
 darkModeQuery.addEventListener('change', handleSystemThemeChange)
+
+// 监听 visible 属性变化
+watch(() => props.visible, (newVisible) => {
+  if (newVisible && terminal && fitAddon) {
+    // 当终端变为可见时，重新调整大小
+    nextTick(() => {
+      fitAddon.fit()
+      const { cols, rows } = terminal
+      invoke('resize_terminal', {
+        sessionId: props.session.id,
+        cols,
+        rows
+      }).catch(err => console.error('调整终端大小失败:', err))
+    })
+  }
+})
 
 onUnmounted(() => {
   window.removeEventListener('resize', handleResize)
@@ -639,17 +705,25 @@ const handleFileSelect = async (file) => {
 
 <style scoped>
 .block-terminal-pane {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
   display: flex;
   flex-direction: column;
   height: 100%;
   width: 100%;
   background: var(--terminal-bg);
   opacity: 0;
+  pointer-events: none;
   transition: opacity 0.2s, background-color 0.3s ease;
 }
 
 .block-terminal-pane.visible {
   opacity: 1;
+  pointer-events: auto;
+  z-index: 1;
 }
 
 .terminal-area {

@@ -21,6 +21,10 @@ export default defineConfig({
     watch: {
       ignored: ["**/src-tauri/**"],
     },
+    cors: {
+      origin: ['tauri://localhost', 'http://localhost:1420'],
+      credentials: true
+    }
   },
   build: {
     // 生产环境优化

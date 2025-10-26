@@ -1,12 +1,17 @@
 <script setup>
 import { onMounted } from 'vue'
 import Navigation from './components/Navigation.vue'
+import DebugPanel from './components/DebugPanel.vue'
 import { useTheme } from './composables/useTheme'
+import { useLogsStore } from './stores/logs'
 
 const { initTheme } = useTheme()
+const logsStore = useLogsStore()
 
 onMounted(() => {
   initTheme()
+  logsStore.success('应用启动成功')
+  logsStore.info(`日志系统已就绪 - 按 Ctrl+Shift+L 打开日志面板`)
 })
 </script>
 
@@ -20,6 +25,9 @@ onMounted(() => {
         </keep-alive>
       </router-view>
     </div>
+    
+    <!-- 日志面板 -->
+    <DebugPanel />
   </div>
 </template>
 

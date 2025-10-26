@@ -1,6 +1,8 @@
 <script setup>
 import { ref } from 'vue'
 import { useTerminalStore } from '../stores/terminal'
+import { useConfirmDialog } from '../composables/useConfirmDialog'
+import ConfirmDialog from './ConfirmDialog.vue'
 
 const store = useTerminalStore()
 const emit = defineEmits(['new-tab'])
@@ -8,13 +10,31 @@ const emit = defineEmits(['new-tab'])
 const editingTab = ref(null)
 const editingTitle = ref('')
 
+// 确认对话框
+const { showDialog, dialogTitle, dialogMessage, dialogType, confirm, handleConfirm, handleCancel } = useConfirmDialog()
+
 const selectTab = (id) => {
   store.setActiveSession(id)
 }
 
-const closeTab = (id, event) => {
+const closeTab = async (id, event) => {
   event.stopPropagation()
-  store.closeSession(id)
+
+  // 如果只有一个标签,不显示确认
+  if (store.sessions.length === 1) {
+    return
+  }
+
+  // 显示确认对话框
+  const confirmed = await confirm(
+    '关闭终端标签',
+    '确定要关闭这个终端标签吗？所有未保存的内容将会丢失。',
+    'warning'
+  )
+
+  if (confirmed) {
+    store.closeSession(id)
+  }
 }
 
 const newTab = () => {

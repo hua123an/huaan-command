@@ -66,18 +66,30 @@ let fitAddon = null
 let unlisten = null
 
 // 使用 Map 存储每个会话的初始化状态
-const sessionInitialized = new Map()
+// 全局会话初始化状态管理，避免组件重新挂载时丢失状态
+const sessionInitialized = (() => {
+  const map = new Map()
+
+  // 暴露方法用于外部访问
+  return {
+    get: (id) => map.get(id),
+    set: (id, value) => map.set(id, value),
+    delete: (id) => map.delete(id),
+    has: (id) => map.has(id)
+  }
+})()
 
 // 保存会话数据到 store
 const saveSessionData = () => {
   if (!props.session) return
-  
+
   terminalStore.updateSessionMode(props.session.id, warpMode.value)
   terminalStore.updateSessionModel(props.session.id, currentModel.value)
   terminalStore.updateSessionConversation(props.session.id, conversationHistory.value)
   terminalStore.updateSessionBuffer(props.session.id, terminalBuffer.value)
   terminalStore.updateSessionCommandHistory(props.session.id, commandHistory.value)
   terminalStore.updateSessionCurrentDir(props.session.id, currentDir.value)
+  terminalStore.updateSessionInitialized(props.session.id, sessionInitialized.get(props.session.id))
 }
 
 // 从 store 恢复会话数据
@@ -93,6 +105,11 @@ const restoreSessionData = () => {
     commandHistory.value = sessionData.commandHistory || []
     currentDir.value = sessionData.currentDir || '~'
     
+    // 恢复初始化状态
+    if (sessionData.initialized) {
+      sessionInitialized.set(props.session.id, sessionData.initialized)
+    }
+
     // 如果有恢复的数据，说明已经初始化过
     if (sessionData.terminalBuffer && sessionData.terminalBuffer.length > 0) {
       sessionInitialized.set(props.session.id, true)
@@ -105,7 +122,8 @@ const restoreSessionData = () => {
       bufferLines: terminalBuffer.value.length,
       commandHistory: commandHistory.value.length,
       currentDir: currentDir.value,
-      hasInitialized: sessionInitialized.get(props.session.id) || false
+      hasInitialized: sessionInitialized.get(props.session.id) || false,
+      storedInitialized: sessionData.initialized
     })
   }
 }
@@ -166,6 +184,13 @@ onMounted(async () => {
         return  // 不发送到 shell
       }
 
+      // 检测 Ctrl+I（手动初始化终端）
+      if (data.charCodeAt(0) === 9) {  // Ctrl+I (ASCII 9)
+        console.log('🔵 检测到 Ctrl+I，手动初始化终端')
+        manualInitializeTerminal()
+        return  // 不发送到 shell
+      }
+
       // 如果在 AI 模式（Warp 模式或旧的 aiMode），完全接管输入
       if (warpMode.value === 'ai' || aiMode.value) {
         console.log('🔵 AI 模式处理输入')
@@ -215,9 +240,9 @@ onMounted(async () => {
   if (terminalBuffer.value.length > 0) {
     const historicalContent = terminalBuffer.value.slice(-100).join('\n') // 恢复最近100行
     if (historicalContent) {
-      terminal.write('\x1b[90m━━━━ 会话历史 ━━━━\x1b[0m\r\n')
+      // 静默恢复，不显示分割线
       terminal.write(historicalContent.replace(/\n/g, '\r\n'))
-      terminal.write('\r\n\x1b[90m━━━━━━━━━━━━━━━━\x1b[0m\r\n')
+      terminal.write('\r\n')
     }
   }
 
@@ -238,29 +263,16 @@ onMounted(async () => {
       // 现在只匹配简单的命令输出，不包含用户名主机名
       // 如果需要检测目录变化，通过 cd 命令来处理
       
-      // 保存输出到 buffer（最近1000行）
+      // 保存输出到 buffer（限制最多10000行）
       const lines = event.payload.split('\n')
       terminalBuffer.value.push(...lines)
-      if (terminalBuffer.value.length > 1000) {
-        terminalBuffer.value = terminalBuffer.value.slice(-1000)
+      if (terminalBuffer.value.length > 10000) {
+        terminalBuffer.value = terminalBuffer.value.slice(-10000)
       }
     })
-    
-    // 自动初始化：仅在首次创建且未初始化过的会话时发送回车触发 prompt
-    if (!sessionInitialized.get(props.session.id)) {
-      setTimeout(async () => {
-        try {
-          await invoke('write_terminal', { 
-            sessionId: props.session.id, 
-            data: '\r' 
-          })
-          sessionInitialized.set(props.session.id, true)
-          console.log('✓ 终端已自动初始化 (会话', props.session.id, ')')
-        } catch (error) {
-          console.warn('Failed to initialize terminal:', error)
-        }
-      }, 300)  // 300ms 延迟确保终端完全就绪
-    }
+
+    // 由于设置了 PS1 环境变量，shell 会自动显示提示符，无需手动初始化
+    // 移除自动初始化逻辑，避免显示两次提示符
 
   } catch (error) {
     terminal.write(`\x1b[31m错误: ${error}\x1b[0m\r\n`)
@@ -298,12 +310,16 @@ onMounted(async () => {
       // 保存当前会话数据
       saveSessionData()
 
+      // 重置初始化状态，以便重新初始化
+      sessionInitialized.delete(props.session.id)
+
       // 关闭旧终端
       if (unlisten) unlisten()
       if (terminal) terminal.dispose()
 
       try {
         await invoke('close_terminal', { sessionId: props.session.id })
+        console.log('✓ 已关闭旧终端会话')
       } catch (err) {
         console.error('关闭终端失败:', err)
       }
@@ -381,6 +397,7 @@ onMounted(async () => {
             sessionId: props.session.id,
             shellType: settingsStore.settings.shell
           })
+          console.log('✓ 已重新启动终端会话')
 
           // 重新监听输出
           unlisten = await listen(`terminal-output-${props.session.id}`, (event) => {
@@ -394,6 +411,10 @@ onMounted(async () => {
           })
 
           terminal.write(`\x1b[32m✓ 已切换到 ${newShell}\x1b[0m\r\n`)
+
+          // shell 会自动显示提示符，无需手动初始化
+          sessionInitialized.set(props.session.id, true)
+
         } catch (error) {
           terminal.write(`\x1b[31m错误: ${error}\x1b[0m\r\n`)
         }
@@ -993,18 +1014,9 @@ const handleModeUpdate = async (mode) => {
     terminal.scrollToBottom()
   } else {
     // 不清空对话历史，保留用于下次切换回 AI 模式
-    
-    // 简洁模式：不显示切换提示
+
+    // 简洁模式：不显示切换提示，shell 会自动显示提示符
     terminal.write('\r\n')
-    // 自动初始化：发送回车触发新的 prompt
-    try {
-      await invoke('write_terminal', { 
-        sessionId: props.session.id, 
-        data: '\r' 
-      })
-    } catch (error) {
-      console.warn('Failed to initialize terminal:', error)
-    }
   }
   
   // 额外等待100ms确保所有提示信息都已显示
@@ -1267,11 +1279,42 @@ const sendNotification = () => {
   }
 }
 
+// 手动初始化终端
+const manualInitializeTerminal = async () => {
+  if (sessionInitialized.get(props.session.id)) {
+    terminal.write('\x1b[33m⚠️ 终端已经初始化过了\x1b[0m\r\n')
+    return
+  }
+
+  try {
+    terminal.write('\x1b[36m🔄 手动初始化终端...\x1b[0m\r\n')
+    await new Promise(resolve => setTimeout(resolve, 500))
+
+    await invoke('write_terminal', {
+      sessionId: props.session.id,
+      data: '\r'
+    })
+    sessionInitialized.set(props.session.id, true)
+    terminal.write('\x1b[32m✓ 终端手动初始化成功\x1b[0m\r\n')
+  } catch (error) {
+    terminal.write(`\x1b[31m❌ 手动初始化失败: ${error.message}\x1b[0m\r\n`)
+    console.error('Manual initialization failed:', error)
+  }
+}
+
 // keep-alive 激活时（从其他页面切换回来）
 onActivated(() => {
   if (terminal && fitAddon) {
     // 恢复终端尺寸
     setTimeout(() => fitAddon.fit(), 10)
+
+    // 如果终端还没有初始化，尝试重新初始化
+    if (!sessionInitialized.get(props.session.id)) {
+      setTimeout(() => {
+        terminal.write('\x1b[36m🔄 检测到终端未初始化，尝试重新初始化...\x1b[0m\r\n')
+        manualInitializeTerminal()
+      }, 1000)
+    }
   }
 })
 
@@ -1359,6 +1402,13 @@ onUnmounted(async () => {
           </svg>
         </button>
         
+        <button class="action-btn" @click="manualInitializeTerminal" title="重新初始化终端">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <path d="M8 2C5.79 2 4 3.79 4 6v2H2l4 4 4-4H6V6c0-1.11 0.89-2 2-2s2 0.89 2 2c0 1.66-2 3-2 3" stroke="currentColor" stroke-width="1.5" fill="none"/>
+          </svg>
+          <span class="action-text">⟳</span>
+        </button>
+
         <button class="action-btn" @click="sendNotification" title="邮件">
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
             <rect x="2" y="4" width="12" height="8" rx="1" stroke="currentColor" stroke-width="1.5"/>

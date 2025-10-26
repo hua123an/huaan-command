@@ -279,7 +279,23 @@ export const useAIStore = defineStore('ai', () => {
         stack: error.stack,
         fullError: error
       })
-      throw new Error(error.message || 'AI 调用失败')
+
+      // 提供更友好的错误提示
+      let friendlyMessage = 'AI 调用失败'
+
+      if (error.message?.includes('network') || error.message?.includes('fetch')) {
+        friendlyMessage = '网络连接失败,请检查网络设置或 API 端点配置'
+      } else if (error.message?.includes('401') || error.message?.includes('Unauthorized')) {
+        friendlyMessage = 'API Key 无效或已过期,请检查设置中的 API Key'
+      } else if (error.message?.includes('429') || error.message?.includes('rate limit')) {
+        friendlyMessage = 'API 调用次数超限,请稍后重试或升级套餐'
+      } else if (error.message?.includes('timeout')) {
+        friendlyMessage = '请求超时,请检查网络连接或稍后重试'
+      } else if (error.message) {
+        friendlyMessage = error.message
+      }
+
+      throw new Error(friendlyMessage)
     } finally {
       isGenerating.value = false
     }

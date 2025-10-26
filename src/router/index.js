@@ -1,7 +1,9 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import Terminal from '../views/Terminal.vue'
-import Tasks from '../views/Tasks.vue'
-import Settings from '../views/Settings.vue'
+
+// 路由懒加载优化
+const Terminal = () => import('../views/Terminal.vue')
+const Tasks = () => import('../views/Tasks.vue')
+const Settings = () => import('../views/Settings.vue')
 
 const routes = [
   {

@@ -263,6 +263,7 @@ const goBack = () => {
           <select v-model="settingsStore.settings.shell" @change="settingsStore.saveSettings()">
             <option value="bash">Bash</option>
             <option value="zsh">Zsh</option>
+            <option value="fish">Fish</option>
           </select>
         </div>
 

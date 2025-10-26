@@ -34,54 +34,35 @@ impl TerminalManager {
             pixel_height: 0,
         })?;
 
-        // 获取 shell（优先使用指定的 shell 类型）
+        // 严格按照用户设置选择 shell，不做 fallback
         let shell = if cfg!(target_os = "windows") {
             "powershell.exe".to_string()
         } else {
             match shell_type.as_deref() {
                 Some("bash") => {
-                    // 检查 bash 是否存在
-                    if std::path::Path::new("/bin/bash").exists() {
-                        "/bin/bash".to_string()
-                    } else if std::path::Path::new("/usr/bin/bash").exists() {
-                        "/usr/bin/bash".to_string()
+                    // 优先使用 Homebrew 安装的新版 bash，它在 PTY 环境下更稳定
+                    if std::path::Path::new("/opt/homebrew/bin/bash").exists() {
+                        "/opt/homebrew/bin/bash".to_string()
+                    } else if std::path::Path::new("/usr/local/bin/bash").exists() {
+                        "/usr/local/bin/bash".to_string()
                     } else {
-                        eprintln!("Warning: bash not found, falling back to sh");
-                        "/bin/sh".to_string()
-                    }
-                }
-                Some("zsh") => {
-                    // 检查 zsh 是否存在
-                    if std::path::Path::new("/bin/zsh").exists() {
-                        "/bin/zsh".to_string()
-                    } else if std::path::Path::new("/usr/bin/zsh").exists() {
-                        "/usr/bin/zsh".to_string()
-                    } else {
-                        eprintln!("Warning: zsh not found, falling back to bash");
                         "/bin/bash".to_string()
                     }
                 },
+                Some("zsh") => "/bin/zsh".to_string(),
                 Some("fish") => {
-                    // 检查 fish 是否存在
-                    if std::path::Path::new("/bin/fish").exists() {
-                        "/bin/fish".to_string()
-                    } else if std::path::Path::new("/usr/bin/fish").exists() {
+                    // 优先使用 Homebrew 安装的 fish
+                    if std::path::Path::new("/opt/homebrew/bin/fish").exists() {
+                        "/opt/homebrew/bin/fish".to_string()
+                    } else if std::path::Path::new("/usr/local/bin/fish").exists() {
+                        "/usr/local/bin/fish".to_string()
+                    } else {
                         "/usr/bin/fish".to_string()
-                    } else {
-                        eprintln!("Warning: fish not found, falling back to bash");
-                        "/bin/bash".to_string()
                     }
-                }
+                },
                 _ => {
-                    // 默认 shell 选择逻辑
-                    if std::path::Path::new("/bin/bash").exists() {
-                        "/bin/bash".to_string()
-                    } else if std::path::Path::new("/bin/sh").exists() {
-                        "/bin/sh".to_string()
-                    } else {
-                        eprintln!("Error: No suitable shell found");
-                        return Err(anyhow::anyhow!("No suitable shell found"));
-                    }
+                    // 未指定时使用系统默认 shell
+                    std::env::var("SHELL").unwrap_or_else(|_| "/bin/zsh".to_string())
                 }
             }
         };
@@ -102,11 +83,15 @@ impl TerminalManager {
         cmd.env("COLORTERM", "truecolor");   // 支持真彩色
 
         // 设置极简提示符（只显示 > ）
-        cmd.env("PS1", "> ");  // bash/sh 提示符
-        cmd.env("PROMPT", "> ");  // zsh 提示符
+        cmd.env("PS1", "> ");  // bash/sh/zsh 提示符
+        cmd.env("SIMPLE_PROMPT", "1");  // 启用简洁提示符（zsh 通过 .zshrc 检测）
 
         // 禁用 zsh 的各种提示和警告信息
         cmd.env("BASH_SILENCE_DEPRECATION_WARNING", "1");  // 禁用 bash 弃用警告
+
+        // 确保 zsh 使用简洁提示符（禁用主题）
+        cmd.env("ZSH_THEME", "");  // 禁用 oh-my-zsh 主题
+        cmd.env("PROMPT", "> ");  // zsh 额外设置
 
         // 保留现有环境变量
         if let Ok(path) = std::env::var("PATH") {
@@ -143,25 +128,27 @@ impl TerminalManager {
             }
         }
 
-        // 配置为交互式登录 shell（会加载 .zshrc, .bashrc 等配置文件）
+        // 获取 home 目录用于配置文件路径
+        let home_dir = std::env::var("HOME").unwrap_or_else(|_| ".".to_string());
+
+        // 配置为交互式 shell 并自动加载所有配置文件
         if !cfg!(target_os = "windows") {
             if shell.contains("bash") {
-                // bash: 使用 -l (登录shell) 加载 ~/.bash_profile, ~/.bashrc
-                cmd.arg("-l");
+                // 新版 bash (Homebrew) 需要 -i 参数才能正常工作
+                cmd.arg("-i");  // 交互式 shell
             } else if shell.contains("zsh") {
-                // zsh: 使用 -l (登录shell) 加载 ~/.zshrc, ~/.zprofile
-                cmd.arg("-l");
+                // zsh: 使用 -i 交互式模式会自动加载 .zshrc
+                cmd.arg("-i");  // 交互式 shell
             } else if shell.contains("fish") {
-                // fish: 使用 --login 加载配置
-                cmd.arg("--login");
+                // fish: 交互式模式会自动加载配置
+                cmd.arg("-i");
             } else {
-                // 其他 shell：使用登录模式
-                cmd.arg("-l");
+                // 其他 shell：使用交互模式
+                cmd.arg("-i");
             }
         }
 
         // 设置工作目录
-        let home_dir = std::env::var("HOME").unwrap_or_else(|_| ".".to_string());
         println!("Setting working directory to: {}", home_dir);
         cmd.cwd(home_dir);
 
@@ -174,6 +161,7 @@ impl TerminalManager {
         let writer = pair.master.take_writer()?;
 
         // 存储会话
+        let is_fish = shell.contains("fish");
         {
             let mut sessions = self.sessions.lock().unwrap();
             sessions.insert(session_id, TerminalSession {
@@ -181,6 +169,14 @@ impl TerminalManager {
                 pair,
                 writer,
             });
+        }
+
+        // Fish 需要一个初始化命令来显示提示符
+        if is_fish {
+            // 等待 fish 完全启动
+            std::thread::sleep(std::time::Duration::from_millis(200));
+            // 发送一个空行来触发提示符显示
+            let _ = self.write_terminal(session_id, "\r".to_string());
         }
 
         // 启动读取任务

@@ -370,6 +370,7 @@ onMounted(() => {
               <select v-model="settingsStore.settings.shell">
                 <option value="bash">Bash</option>
                 <option value="zsh">Zsh</option>
+                <option value="fish">Fish</option>
               </select>
               <p class="hint">切换终端类型将重新初始化所有终端会话</p>
             </div>

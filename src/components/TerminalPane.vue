@@ -255,14 +255,13 @@ onMounted(async () => {
     })
     console.log('🟢 终端进程已启动')
 
+    // 首次输出标志（用于清除初始提示符）
+    let firstOutput = true
+
     // 监听终端输出
     unlisten = await listen(`terminal-output-${props.session.id}`, (event) => {
       terminal.write(event.payload)
-      
-      // 尝试从 prompt 中提取当前目录（简化后的 prompt 格式）
-      // 现在只匹配简单的命令输出，不包含用户名主机名
-      // 如果需要检测目录变化，通过 cd 命令来处理
-      
+
       // 保存输出到 buffer（限制最多10000行）
       const lines = event.payload.split('\n')
       terminalBuffer.value.push(...lines)
@@ -399,14 +398,17 @@ onMounted(async () => {
           })
           console.log('✓ 已重新启动终端会话')
 
+          // 首次输出标志（用于清除初始提示符）
+          let firstOutput = true
+
           // 重新监听输出
           unlisten = await listen(`terminal-output-${props.session.id}`, (event) => {
             terminal.write(event.payload)
 
             const lines = event.payload.split('\n')
             terminalBuffer.value.push(...lines)
-            if (terminalBuffer.value.length > 1000) {
-              terminalBuffer.value = terminalBuffer.value.slice(-1000)
+            if (terminalBuffer.value.length > 10000) {
+              terminalBuffer.value = terminalBuffer.value.slice(-10000)
             }
           })
 
@@ -1068,9 +1070,7 @@ const handleFileSelect = (file) => {
 // 保存会话
 const saveSession = () => {
   saveSessionData()
-  terminal.write('
-\x1b[32m✓ 会话已保存\x1b[0m
-')
+  terminal.write('\r\n\x1b[32m✓ 会话已保存\x1b[0m\r\n')
 }
 
 // 清空终端

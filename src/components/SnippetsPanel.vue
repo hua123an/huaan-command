@@ -135,8 +135,8 @@ const closeDialog = () => {
         <div class="snippet-header">
           <h3>{{ snippet.name }}</h3>
           <div class="snippet-actions">
-            <button class="action-btn" @click="editSnippet(snippet)" title="编辑">✎</button>
-            <button class="action-btn delete" @click="deleteSnippet(snippet.id)" title="删除">🗑</button>
+            <button class="action-btn" title="编辑" @click="editSnippet(snippet)">✎</button>
+            <button class="action-btn delete" title="删除" @click="deleteSnippet(snippet.id)">🗑</button>
           </div>
         </div>
         <p class="snippet-description">{{ snippet.description }}</p>

@@ -93,7 +93,7 @@ const initTerminal = async () => {
     // 监听终端输出
     unlisten = await listen(`terminal-output-${props.session.id}`, (event) => {
       if (terminal) {
-        let output = event.payload
+        const output = event.payload
 
         // 初始阶段：收集并过滤系统欢迎信息
         if (isInitialOutput) {
@@ -110,7 +110,7 @@ const initTerminal = async () => {
             isInitialOutput = false
 
             // 移除所有已知的系统欢迎信息
-            let cleanOutput = initialOutputBuffer
+            const cleanOutput = initialOutputBuffer
               .replace(/The default interactive shell is now.*?\n/g, '')
               .replace(/To update your account to use.*?\n/g, '')
               .replace(/For more details.*?\n/g, '')
@@ -667,17 +667,17 @@ const handleFileSelect = async (file) => {
 <template>
   <div class="block-terminal-pane" :class="{ visible }">
     <!-- 终端输出区域（xterm.js） -->
-    <div class="terminal-area" ref="terminalRef" @click="focusTerminal"></div>
+    <div ref="terminalRef" class="terminal-area" @click="focusTerminal"></div>
     
     <!-- 底部区域：模式切换 + 输入框 -->
     <div class="bottom-area">
       <!-- Warp 模式栏 -->
       <WarpModeBar
         :mode="warpMode"
-        :currentModel="currentModel"
-        :sessionId="session.id"
+        :current-model="currentModel"
+        :session-id="session.id"
         @update:mode="handleModeUpdate"
-        @update:currentModel="handleModelUpdate"
+        @update:current-model="handleModelUpdate"
         @mention-file="handleMentionFile"
       />
       
@@ -685,8 +685,8 @@ const handleFileSelect = async (file) => {
       <FixedInput
         ref="inputComponent"
         :mode="warpMode"
-        :currentModel="currentModel"
-        :currentDir="currentDir"
+        :current-model="currentModel"
+        :current-dir="currentDir"
         @submit="handleSubmit"
         @update:mode="handleModeUpdate"
         @mention-file="handleMentionFile"
@@ -696,7 +696,7 @@ const handleFileSelect = async (file) => {
     <!-- 文件选择器 -->
     <FilePickerModal
       :show="showFilePicker"
-      :currentDir="currentDir"
+      :current-dir="currentDir"
       @select="handleFileSelect"
       @close="showFilePicker = false"
     />

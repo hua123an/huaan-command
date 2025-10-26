@@ -15,16 +15,16 @@ const navigate = (name) => {
     <div class="nav-left">
       <button 
         :class="['nav-btn', { active: route.name === 'Tasks' }]"
-        @click="navigate('Tasks')"
         title="任务管理"
+        @click="navigate('Tasks')"
       >
         <span class="nav-icon">📋</span>
         <span class="nav-label">任务</span>
       </button>
       <button 
         :class="['nav-btn', { active: route.name === 'Terminal' }]"
-        @click="navigate('Terminal')"
         title="终端"
+        @click="navigate('Terminal')"
       >
         <span class="nav-icon">⌘</span>
         <span class="nav-label">终端</span>
@@ -39,8 +39,8 @@ const navigate = (name) => {
     <div class="nav-right">
       <button 
         :class="['settings-btn', { active: route.name === 'Settings' }]"
-        @click="navigate('Settings')"
         title="设置"
+        @click="navigate('Settings')"
       >
         <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
           <path d="M9 11.5C10.3807 11.5 11.5 10.3807 11.5 9C11.5 7.61929 10.3807 6.5 9 6.5C7.61929 6.5 6.5 7.61929 6.5 9C6.5 10.3807 7.61929 11.5 9 11.5Z" stroke="currentColor" stroke-width="1.5"/>

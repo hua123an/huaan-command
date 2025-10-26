@@ -226,10 +226,10 @@ const handleImport = async (event) => {
           </h1>
           <input
             :value="searchQuery"
-            @input="handleSearchInput"
             type="text"
             placeholder="🔍 搜索任务... (Cmd+F)"
             class="search-input"
+            @input="handleSearchInput"
           />
         </div>
         
@@ -237,17 +237,17 @@ const handleImport = async (event) => {
           <div class="btn-group">
             <button 
               class="btn btn-icon" 
-              @click="showAIChat = !showAIChat"
               :class="{ active: showAIChat }"
               title="AI 助手"
+              @click="showAIChat = !showAIChat"
             >
               🤖
             </button>
             <button 
               class="btn btn-icon" 
-              @click="showStats = !showStats"
               :class="{ active: showStats }"
               title="统计面板"
+              @click="showStats = !showStats"
             >
               📊
             </button>
@@ -255,8 +255,8 @@ const handleImport = async (event) => {
           
           <button 
             class="btn btn-outline" 
-            @click="showWorkflows = true"
             title="工作流模板"
+            @click="showWorkflows = true"
           >
             📋 工作流
           </button>
@@ -264,21 +264,21 @@ const handleImport = async (event) => {
           <div class="btn-group">
             <label class="btn btn-outline import-btn">
               📥
-              <input type="file" accept=".json" @change="handleImport" style="display: none" />
+              <input type="file" accept=".json" style="display: none" @change="handleImport" />
             </label>
             <button 
               class="btn btn-outline" 
-              @click="taskStore.exportTasks()"
               :disabled="taskStore.tasks.length === 0"
               title="导出 (Cmd+E)"
+              @click="taskStore.exportTasks()"
             >
               📤
             </button>
             <button 
               class="btn btn-outline" 
-              @click="handleClearAll"
               :disabled="taskStore.tasks.length === 0"
               title="清空 (Cmd+K)"
+              @click="handleClearAll"
             >
               🗑️
             </button>
@@ -286,14 +286,14 @@ const handleImport = async (event) => {
           
           <button 
             class="btn btn-run" 
-            @click="handleRunAll"
             :disabled="taskStore.tasks.length === 0 || taskStore.isRunningAll"
             title="运行所有 (Cmd+R)"
+            @click="handleRunAll"
           >
             {{ taskStore.isRunningAll ? '⏸ 运行中...' : '▶ 运行' }}
           </button>
           
-          <button class="btn btn-primary" @click="showForm = true" title="新建 (Cmd+N)">
+          <button class="btn btn-primary" title="新建 (Cmd+N)" @click="showForm = true">
             + 新建
           </button>
         </div>

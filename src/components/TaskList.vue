@@ -118,38 +118,38 @@ const getDuration = (task) => {
           <div class="task-actions" @click.stop>
             <button
               class="action-btn edit"
-              @click="emit('edit', task)"
               title="编辑"
+              @click="emit('edit', task)"
             >
               ✏️
             </button>
             <button
               class="action-btn clone"
-              @click="emit('clone', task)"
               title="克隆"
+              @click="emit('clone', task)"
             >
               📋
             </button>
             <button
               v-if="task.status === 'pending' || task.status === 'failed'"
               class="action-btn run"
-              @click="handleRunTask(task)"
               title="运行"
+              @click="handleRunTask(task)"
             >
               ▶
             </button>
             <button
               v-if="task.status === 'running'"
               class="action-btn cancel"
-              @click="handleCancelTask(task)"
               title="取消"
+              @click="handleCancelTask(task)"
             >
               ■
             </button>
             <button
               class="action-btn delete"
-              @click="handleDeleteTask(task)"
               title="删除"
+              @click="handleDeleteTask(task)"
             >
               🗑️
             </button>
@@ -163,11 +163,11 @@ const getDuration = (task) => {
               {{ { pending: '待运行', running: '运行中', success: '成功', failed: '失败', cancelled: '已取消' }[task.status] }}
             </span>
           </span>
-          <span class="meta-item" v-if="task.start_time">
+          <span v-if="task.start_time" class="meta-item">
             <span class="meta-label">开始:</span>
             <span class="meta-value">{{ formatTime(task.start_time) }}</span>
           </span>
-          <span class="meta-item" v-if="task.start_time">
+          <span v-if="task.start_time" class="meta-item">
             <span class="meta-label">耗时:</span>
             <span class="meta-value">{{ getDuration(task) }}</span>
           </span>

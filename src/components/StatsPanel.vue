@@ -69,12 +69,12 @@ const getStatusColor = (status) => {
     <div class="history-section">
       <div class="section-header">
         <h3>最近记录</h3>
-        <button class="clear-btn" @click="historyStore.clearHistory()" v-if="historyStore.history.length > 0">
+        <button v-if="historyStore.history.length > 0" class="clear-btn" @click="historyStore.clearHistory()">
           清空历史
         </button>
       </div>
 
-      <div class="history-list" v-if="historyStore.history.length > 0">
+      <div v-if="historyStore.history.length > 0" class="history-list">
         <div
           v-for="record in historyStore.history.slice(0, 10)"
           :key="record.id"

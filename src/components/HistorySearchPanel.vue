@@ -87,8 +87,8 @@ const formatTime = (timestamp) => {
         <div class="command-info">
           <button 
             :class="['favorite-btn', { active: historyStore.isFavorite(entry.command) }]"
-            @click="toggleFavorite(entry.command)"
             title="收藏"
+            @click="toggleFavorite(entry.command)"
           >
             {{ historyStore.isFavorite(entry.command) ? '⭐' : '☆' }}
           </button>

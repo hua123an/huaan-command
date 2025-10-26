@@ -192,7 +192,7 @@ onMounted(() => {
       
       <!-- 工具栏 -->
       <div class="toolbar">
-        <button class="tool-btn" @click="goUp" :disabled="currentPath === '/'">
+        <button class="tool-btn" :disabled="currentPath === '/'" @click="goUp">
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
             <path d="M13 10L8 5L3 10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
           </svg>
@@ -225,8 +225,8 @@ onMounted(() => {
         </div>
         
         <div
-          v-else
           v-for="file in filteredFiles"
+          v-else
           :key="file.path"
           :class="['file-item', { directory: file.is_dir }]"
           @dblclick="file.is_dir ? enterDirectory(file) : null"
@@ -245,8 +245,8 @@ onMounted(() => {
             <!-- 选择按钮：文件和目录都可以选择 -->
             <button 
               class="action-btn select-btn"
-              @click.stop="selectItem(file)"
               :title="file.is_dir ? '选择此目录' : '选择此文件'"
+              @click.stop="selectItem(file)"
             >
               <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                 <path d="M3 8L6.5 11.5L13 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -256,8 +256,8 @@ onMounted(() => {
             <button 
               v-if="file.is_dir"
               class="action-btn enter-btn"
-              @click.stop="enterDirectory(file)"
               title="进入目录"
+              @click.stop="enterDirectory(file)"
             >
               <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                 <path d="M6 4L10 8L6 12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>

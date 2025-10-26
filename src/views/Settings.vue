@@ -125,7 +125,7 @@ const goBack = () => {
 <template>
   <div class="settings-page">
     <div class="page-header">
-      <button class="back-btn" @click="goBack" title="返回">
+      <button class="back-btn" title="返回" @click="goBack">
         <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
           <path d="M12 4L6 10L12 16" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
@@ -179,8 +179,8 @@ const goBack = () => {
           </div>
           <label class="switch">
             <input
-              type="checkbox"
               v-model="settingsStore.settings.enableNotifications"
+              type="checkbox"
               @change="settingsStore.saveSettings()"
             />
             <span class="slider"></span>
@@ -194,27 +194,27 @@ const goBack = () => {
           </div>
           <label class="switch">
             <input
-              type="checkbox"
               v-model="settingsStore.settings.enableSound"
+              type="checkbox"
               @change="settingsStore.saveSettings()"
             />
             <span class="slider"></span>
           </label>
         </div>
 
-        <div class="setting-item" v-if="settingsStore.settings.enableSound">
+        <div v-if="settingsStore.settings.enableSound" class="setting-item">
           <div class="setting-info">
             <label>音量</label>
             <p>提示音音量大小</p>
           </div>
           <input
+            v-model.number="settingsStore.settings.soundVolume"
             type="range"
             min="0"
             max="1"
             step="0.1"
-            v-model.number="settingsStore.settings.soundVolume"
-            @change="settingsStore.saveSettings()"
             class="volume-slider"
+            @change="settingsStore.saveSettings()"
           />
         </div>
       </div>
@@ -229,15 +229,15 @@ const goBack = () => {
           </div>
           <label class="switch">
             <input
-              type="checkbox"
               v-model="settingsStore.settings.enableHistory"
+              type="checkbox"
               @change="settingsStore.saveSettings()"
             />
             <span class="slider"></span>
           </label>
         </div>
 
-        <div class="setting-item" v-if="settingsStore.settings.enableHistory">
+        <div v-if="settingsStore.settings.enableHistory" class="setting-item">
           <div class="setting-info">
             <label>最大记录数</label>
             <p>保留的历史记录数量</p>
@@ -273,8 +273,8 @@ const goBack = () => {
           </div>
           <label class="switch">
             <input
-              type="checkbox"
               v-model="terminalStore.autoRestore"
+              type="checkbox"
             />
             <span class="slider"></span>
           </label>
@@ -301,8 +301,8 @@ const goBack = () => {
           </div>
           <label class="switch">
             <input
-              type="checkbox"
               v-model="aiStore.enabled"
+              type="checkbox"
               @change="saveAIConfig"
             />
             <span class="slider"></span>
@@ -314,8 +314,8 @@ const goBack = () => {
             <label class="config-label">AI 服务商</label>
             <select 
               v-model="aiStore.provider" 
-              @change="handleProviderChange" 
-              class="provider-select"
+              class="provider-select" 
+              @change="handleProviderChange"
             >
               <option 
                 v-for="provider in providerOptions" 
@@ -339,23 +339,23 @@ const goBack = () => {
             <label class="config-label">API Key</label>
             <div class="config-input-group">
               <input
-                :type="showApiKey ? 'text' : 'password'"
                 v-model="aiStore.apiKey"
+                :type="showApiKey ? 'text' : 'password'"
                 :placeholder="aiStore.currentProvider.keyPlaceholder"
-                @change="saveAIConfig"
                 class="api-key-input"
                 :disabled="!aiStore.currentProvider.requiresKey"
+                @change="saveAIConfig"
               />
               <button 
                 class="btn-toggle-key" 
-                @click="showApiKey = !showApiKey" 
-                :title="showApiKey ? '隐藏' : '显示'"
+                :title="showApiKey ? '隐藏' : '显示'" 
                 :disabled="!aiStore.currentProvider.requiresKey"
+                @click="showApiKey = !showApiKey"
               >
                 {{ showApiKey ? '👁️' : '👁️‍🗨️' }}
               </button>
             </div>
-            <span class="config-hint" v-if="!aiStore.currentProvider.requiresKey">
+            <span v-if="!aiStore.currentProvider.requiresKey" class="config-hint">
               💡 {{ aiStore.currentProvider.name }} 无需 API Key
             </span>
           </div>
@@ -368,9 +368,9 @@ const goBack = () => {
               </label>
               <select 
                 v-model="aiStore.model" 
-                @change="saveAIConfig" 
-                class="select-compact"
+                class="select-compact" 
                 :disabled="loadingModels"
+                @change="saveAIConfig"
               >
                 <option 
                   v-for="model in modelOptions" 
@@ -384,11 +384,11 @@ const goBack = () => {
             <div class="config-col-grow">
               <label class="config-label-sm">API 端点（可选）</label>
               <input
-                type="text"
                 v-model="aiStore.apiEndpoint"
-                @change="saveAIConfig"
+                type="text"
                 class="input-compact"
                 placeholder="https://api.openai.com/v1"
+                @change="saveAIConfig"
               />
             </div>
           </div>

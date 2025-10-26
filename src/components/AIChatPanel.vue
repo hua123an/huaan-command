@@ -67,10 +67,10 @@ onMounted(() => {
         </span>
       </div>
       <div class="header-actions">
-        <button class="icon-btn" @click="aiStore.clearChat()" title="清空对话">
+        <button class="icon-btn" title="清空对话" @click="aiStore.clearChat()">
           🗑️
         </button>
-        <button class="icon-btn" @click="emit('close')" title="关闭">
+        <button class="icon-btn" title="关闭" @click="emit('close')">
           ✕
         </button>
       </div>
@@ -135,14 +135,14 @@ onMounted(() => {
           v-model="userInput"
           type="text"
           placeholder="输入消息... (Enter 发送)"
-          @keyup.enter="sendMessage"
           :disabled="!aiStore.isConfigured || aiStore.isGenerating"
           class="chat-input"
+          @keyup.enter="sendMessage"
         />
         <button
-          @click="sendMessage"
           :disabled="!userInput.trim() || !aiStore.isConfigured || aiStore.isGenerating"
           class="send-btn"
+          @click="sendMessage"
         >
           {{ aiStore.isGenerating ? '⏳' : '📤' }}
         </button>

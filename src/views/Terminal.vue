@@ -74,9 +74,9 @@ const useSnippet = (command) => {
       <BlockTerminalPane
         v-for="session in store.sessions"
         :key="session.id"
+        ref="currentTerminalRef"
         :session="session"
         :visible="session.id === store.activeSessionId"
-        ref="currentTerminalRef"
       />
     </div>
     

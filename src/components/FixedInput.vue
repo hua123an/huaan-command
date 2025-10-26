@@ -235,20 +235,20 @@ defineExpose({
         type="text"
         :placeholder="getPlaceholder()"
         :disabled="disabled"
-        @keydown.enter="submit"
-        @keydown="handleKeyDown"
         class="command-input"
         :class="{ 'ai-mode': mode === 'ai' }"
         autocomplete="off"
         spellcheck="false"
+        @keydown.enter="submit"
+        @keydown="handleKeyDown"
       />
       
       <!-- 提交按钮 -->
       <button 
         class="submit-btn"
-        @click="submit"
         :disabled="!inputValue.trim() || disabled"
         :title="mode === 'ai' ? '发送给 AI' : '执行命令'"
+        @click="submit"
       >
         <span class="submit-icon">{{ mode === 'ai' ? '✨' : '▶' }}</span>
       </button>

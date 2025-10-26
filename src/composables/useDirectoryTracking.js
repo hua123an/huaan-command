@@ -33,7 +33,7 @@ export function useDirectoryTracking() {
     // 例如: huaaandeMacBook-Pro:ittools huaaan$
     const hostPathMatch = cleanOutput.match(/[^:\s]+:([^\s]+)\s+[^\s]+[\$%]/)
     if (hostPathMatch) {
-      let dir = hostPathMatch[1].trim()
+      const dir = hostPathMatch[1].trim()
       // 展开 ~ 为完整路径前缀
       if (dir.startsWith('~')) {
         return dir

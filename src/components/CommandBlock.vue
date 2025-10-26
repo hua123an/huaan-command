@@ -93,7 +93,7 @@ const getStatusColor = () => {
         </span>
       </div>
     </div>
-    <div class="command-output" ref="terminalRef"></div>
+    <div ref="terminalRef" class="command-output"></div>
   </div>
 </template>
 

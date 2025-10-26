@@ -44,8 +44,8 @@ defineExpose({ toggleVisibility })
     <div class="log-header">
       <span class="log-title">📋 应用日志</span>
       <div class="log-actions">
-        <button @click="clearLogs" class="log-btn">清空</button>
-        <button @click="toggleVisibility" class="log-btn close">✕</button>
+        <button class="log-btn" @click="clearLogs">清空</button>
+        <button class="log-btn close" @click="toggleVisibility">✕</button>
       </div>
     </div>
     
@@ -112,9 +112,9 @@ defineExpose({ toggleVisibility })
   
   <!-- 浮动按钮 - 始终显示 -->
   <button 
-    @click="toggleVisibility" 
-    :class="['log-fab', { active: isVisible }]"
+    :class="['log-fab', { active: isVisible }]" 
     :title="isVisible ? '关闭日志面板 (Ctrl+Shift+L)' : '打开日志面板 (Ctrl+Shift+L)'"
+    @click="toggleVisibility"
   >
     📋
   </button>

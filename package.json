@@ -15,7 +15,7 @@
     "tauri:build:intel": "tauri build --target x86_64-apple-darwin",
     "tauri:build:release": "tauri build --release",
     "tauri:build:all": "tauri build --target universal-apple-darwin",
-    "lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs --fix --ignore-path .gitignore",
+    "lint": "eslint . --fix",
     "format": "prettier --write \"src/**/*.{js,vue}\"",
     "test": "echo '✅ No tests configured yet'",
     "test:integration": "echo '✅ No integration tests configured yet'"
@@ -34,6 +34,10 @@
   "devDependencies": {
     "@tauri-apps/cli": "^2.9.1",
     "@vitejs/plugin-vue": "^5.2.1",
+    "eslint": "^9.38.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-vue": "^10.5.1",
+    "prettier": "^3.6.2",
     "terser": "^5.44.0",
     "vite": "^6.0.3"
   }

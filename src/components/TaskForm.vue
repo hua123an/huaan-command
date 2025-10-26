@@ -143,8 +143,8 @@ const handleCancel = () => {
             <button 
               type="button"
               class="ai-toggle-btn"
-              @click="showAIGenerator = !showAIGenerator"
               :class="{ active: showAIGenerator }"
+              @click="showAIGenerator = !showAIGenerator"
             >
               ✨ AI 生成
             </button>
@@ -161,9 +161,9 @@ const handleCancel = () => {
             />
             <button
               type="button"
-              @click="generateAICommand"
               :disabled="!aiDescription.trim() || aiGenerating"
               class="btn btn-primary btn-sm"
+              @click="generateAICommand"
             >
               {{ aiGenerating ? '生成中...' : '生成' }}
             </button>
@@ -171,7 +171,7 @@ const handleCancel = () => {
             <div v-if="aiSuggestion" class="ai-suggestion">
               <div class="suggestion-header">
                 <span>🤖 AI 建议:</span>
-                <button type="button" @click="useAISuggestion" class="btn btn-primary btn-xs">
+                <button type="button" class="btn btn-primary btn-xs" @click="useAISuggestion">
                   使用此命令
                 </button>
               </div>
@@ -202,8 +202,8 @@ const handleCancel = () => {
             </select>
             <button 
               class="btn-add-group" 
-              @click="showNewGroupInput = !showNewGroupInput"
               type="button"
+              @click="showNewGroupInput = !showNewGroupInput"
             >
               {{ showNewGroupInput ? '✕' : '+' }}
             </button>
@@ -216,7 +216,7 @@ const handleCancel = () => {
               class="input"
               @keyup.enter="handleAddGroup"
             />
-            <button class="btn btn-primary" @click="handleAddGroup" type="button">
+            <button class="btn btn-primary" type="button" @click="handleAddGroup">
               添加
             </button>
           </div>

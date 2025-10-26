@@ -202,7 +202,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="settings-modal" v-if="show">
+  <div v-if="show" class="settings-modal">
     <div class="modal-overlay" @click="$emit('close')"></div>
     
     <div class="modal-content">
@@ -248,7 +248,7 @@ onMounted(() => {
                     <div class="theme-name">{{ theme.name }}</div>
                     <div class="theme-description">{{ theme.description }}</div>
                   </div>
-                  <div class="theme-indicator" v-if="currentTheme === theme.key">
+                  <div v-if="currentTheme === theme.key" class="theme-indicator">
                     ✓
                   </div>
                 </div>
@@ -287,8 +287,8 @@ onMounted(() => {
                     <input 
                       type="text" 
                       :value="getColorValue(color.key)"
-                      @input="updateColor(color.key, $event.target.value)"
                       class="color-text"
+                      @input="updateColor(color.key, $event.target.value)"
                     />
                   </div>
                   <div class="color-description">{{ color.description }}</div>
@@ -321,8 +321,8 @@ onMounted(() => {
                 />
                 <button 
                   class="btn-toggle-key" 
-                  @click="toggleApiKeyVisibility"
                   :disabled="!aiSettings.apiKey"
+                  @click="toggleApiKeyVisibility"
                 >
                   {{ showApiKey ? '隐藏' : '显示' }}
                 </button>
@@ -340,7 +340,7 @@ onMounted(() => {
             
             <div class="config-group">
               <label>
-                <input type="checkbox" v-model="aiSettings.enabled" />
+                <input v-model="aiSettings.enabled" type="checkbox" />
                 启用 AI 功能
               </label>
             </div>
@@ -352,7 +352,7 @@ onMounted(() => {
             
             <div class="config-group">
               <label>字体大小</label>
-              <input type="range" min="10" max="24" v-model="terminalSettings.fontSize" />
+              <input v-model="terminalSettings.fontSize" type="range" min="10" max="24" />
               <span>{{ terminalSettings.fontSize }}px</span>
             </div>
             
@@ -376,14 +376,14 @@ onMounted(() => {
 
             <div class="config-group">
               <label>
-                <input type="checkbox" v-model="terminalSettings.autoRestore" />
+                <input v-model="terminalSettings.autoRestore" type="checkbox" />
                 自动恢复会话
               </label>
             </div>
 
             <div class="config-group">
               <label>
-                <input type="checkbox" v-model="terminalSettings.enableBlink" />
+                <input v-model="terminalSettings.enableBlink" type="checkbox" />
                 光标闪烁
               </label>
             </div>

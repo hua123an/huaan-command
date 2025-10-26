@@ -90,8 +90,8 @@ const handleKeydown = (event, id) => {
         <span 
           v-if="editingTab !== session.id"
           class="tab-title"
-          @dblclick="startEdit(session, $event)"
           :title="'双击重命名：' + session.title"
+          @dblclick="startEdit(session, $event)"
         >
           {{ session.title }}
         </span>
@@ -112,6 +112,16 @@ const handleKeydown = (event, id) => {
       </div>
       <button class="new-tab-btn" @click="newTab">+</button>
     </div>
+
+    <!-- 确认对话框 -->
+    <ConfirmDialog
+      :show="showDialog"
+      :title="dialogTitle"
+      :message="dialogMessage"
+      :type="dialogType"
+      @confirm="handleConfirm"
+      @cancel="handleCancel"
+    />
   </div>
 </template>
 

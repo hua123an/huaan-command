@@ -127,8 +127,8 @@ const currentModelName = computed(() => {
         v-for="mode in modes"
         :key="mode.id"
         :class="['mode-btn', { active: mode.id === props.mode, disabled: isSwitching }]"
-        @click="switchMode(mode.id)"
         :style="{ '--mode-color': mode.color }"
+        @click="switchMode(mode.id)"
       >
         <span class="mode-icon">{{ mode.icon }}</span>
         <span class="mode-name">{{ mode.name }}</span>
@@ -136,8 +136,8 @@ const currentModelName = computed(() => {
     </div>
 
     <!-- 中间：功能按钮 -->
-    <div class="actions" v-if="props.mode === 'ai'">
-      <button class="action-btn" @click="triggerFilePicker" title="@ 选择文件">
+    <div v-if="props.mode === 'ai'" class="actions">
+      <button class="action-btn" title="@ 选择文件" @click="triggerFilePicker">
         <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
           <path d="M8 2C9.1 2 10 2.9 10 4C10 5.1 9.1 6 8 6C6.9 6 6 5.1 6 4C6 2.9 6.9 2 8 2ZM8 12C6.9 12 6 11.1 6 10C6 8.9 6.9 8 8 8C9.1 8 10 8.9 10 10C10 11.1 9.1 12 8 12ZM8 7C9.66 7 11 8.34 11 10C11 11.66 9.66 13 8 13C6.34 13 5 11.66 5 10C5 8.34 6.34 7 8 7Z" fill="currentColor"/>
         </svg>
@@ -150,8 +150,8 @@ const currentModelName = computed(() => {
       <div class="model-selector">
         <button 
           class="model-btn" 
-          @click="showModelPicker = !showModelPicker"
           :disabled="!aiStore.isConfigured || loadingModels"
+          @click="showModelPicker = !showModelPicker"
         >
           <svg v-if="!loadingModels" width="14" height="14" viewBox="0 0 14 14" fill="none">
             <circle cx="7" cy="7" r="3" stroke="currentColor" stroke-width="1.5"/>

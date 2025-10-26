@@ -110,7 +110,7 @@ const toggleSearch = () => {
     <div class="detail-header">
       <h2>任务详情</h2>
       <div class="header-actions">
-        <button class="icon-btn" @click="toggleSearch" :class="{ active: showSearch }" title="搜索输出">
+        <button class="icon-btn" :class="{ active: showSearch }" title="搜索输出" @click="toggleSearch">
           🔍
         </button>
         <button class="close-btn" @click="emit('close')">✕</button>
@@ -127,7 +127,7 @@ const toggleSearch = () => {
           <span class="info-label">命令:</span>
           <code class="info-code">
             {{ task.command }}
-            <button class="copy-btn" @click="copyToClipboard(task.command)" title="复制">
+            <button class="copy-btn" title="复制" @click="copyToClipboard(task.command)">
               📋
             </button>
           </code>
@@ -136,15 +136,15 @@ const toggleSearch = () => {
           <span class="info-label">状态:</span>
           <span :class="['info-badge', task.status]">{{ getStatusText() }}</span>
         </div>
-        <div class="info-item" v-if="task.start_time">
+        <div v-if="task.start_time" class="info-item">
           <span class="info-label">开始时间:</span>
           <span class="info-value">{{ formatTime(task.start_time) }}</span>
         </div>
-        <div class="info-item" v-if="task.end_time">
+        <div v-if="task.end_time" class="info-item">
           <span class="info-label">结束时间:</span>
           <span class="info-value">{{ formatTime(task.end_time) }}</span>
         </div>
-        <div class="info-item" v-if="task.start_time">
+        <div v-if="task.start_time" class="info-item">
           <span class="info-label">耗时:</span>
           <span class="info-value">{{ getDuration() }}</span>
         </div>

@@ -127,20 +127,36 @@ impl TerminalManager {
             cmd.env("LANG", "en_US.UTF-8");  // 默认语言环境
         }
 
-        // 配置为交互式 shell（不使用登录模式，避免显示欢迎信息）
+        // ⚠️ 重要：传递所有环境变量，确保 npm, nvm 等工具可用
+        // 遍历所有当前环境变量并传递给子进程
+        for (key, value) in std::env::vars() {
+            // 跳过 Tauri 内部变量和特殊变量
+            if !key.starts_with("TAURI_")
+                && !key.starts_with("__CF")
+                && key != "PATH"  // PATH 已经在上面单独处理
+                && key != "HOME"  // HOME 已经在上面单独处理
+                && key != "USER"  // USER 已经在上面单独处理
+                && key != "SHELL" // SHELL 已经在上面单独处理
+                && key != "LANG"  // LANG 已经在上面单独处理
+            {
+                cmd.env(&key, &value);
+            }
+        }
+
+        // 配置为交互式登录 shell（会加载 .zshrc, .bashrc 等配置文件）
         if !cfg!(target_os = "windows") {
             if shell.contains("bash") {
-                // bash: 只使用 -i (interactive)，不用 -l (login) 避免欢迎信息
-                cmd.arg("-i");
+                // bash: 使用 -l (登录shell) 加载 ~/.bash_profile, ~/.bashrc
+                cmd.arg("-l");
             } else if shell.contains("zsh") {
-                // zsh: 只使用 -i (interactive)，不用 -l (login) 避免欢迎信息
-                cmd.arg("-i");
+                // zsh: 使用 -l (登录shell) 加载 ~/.zshrc, ~/.zprofile
+                cmd.arg("-l");
             } else if shell.contains("fish") {
-                // fish: 只使用 --interactive，不用 --login 避免欢迎信息
-                cmd.arg("--interactive");
+                // fish: 使用 --login 加载配置
+                cmd.arg("--login");
             } else {
-                // 其他 shell：仅使用交互式模式
-                cmd.arg("-i");
+                // 其他 shell：使用登录模式
+                cmd.arg("-l");
             }
         }
 

@@ -9,6 +9,8 @@ export const useGitStore = defineStore('git', () => {
     modified: 0,
     staged: 0,
     untracked: 0,
+    additions: 0, // 新增行数
+    deletions: 0, // 删除行数
     hasChanges: false
   })
 
@@ -26,6 +28,8 @@ export const useGitStore = defineStore('git', () => {
         modified: 0,
         staged: 0,
         untracked: 0,
+        additions: 0,
+        deletions: 0,
         hasChanges: false
       }
 
@@ -37,7 +41,7 @@ export const useGitStore = defineStore('git', () => {
           if (branchMatch) {
             status.branch = branchMatch[1]
           }
-          
+
           // 解析 ahead/behind
           const aheadMatch = branchInfo.match(/ahead (\d+)/)
           const behindMatch = branchInfo.match(/behind (\d+)/)
@@ -93,7 +97,13 @@ export const useGitStore = defineStore('git', () => {
           currentCommit.author = line.substring(8)
         } else if (line.startsWith('Date: ') && currentCommit) {
           currentCommit.date = line.substring(8)
-        } else if (line.trim() && currentCommit && !line.startsWith('commit') && !line.startsWith('Author') && !line.startsWith('Date')) {
+        } else if (
+          line.trim() &&
+          currentCommit &&
+          !line.startsWith('commit') &&
+          !line.startsWith('Author') &&
+          !line.startsWith('Date')
+        ) {
           currentCommit.message += line.trim() + ' '
         }
       }
@@ -123,10 +133,53 @@ export const useGitStore = defineStore('git', () => {
       modified: 0,
       staged: 0,
       untracked: 0,
+      additions: 0,
+      deletions: 0,
       hasChanges: false
     }
     gitHistory.value = []
     isGitRepo.value = false
+  }
+
+  // 刷新 Git 状态（执行 git 命令）
+  async function refreshStatus(workingDir) {
+    try {
+      // 执行 git status --porcelain=v1 --branch
+      const statusOutput = await window.__TAURI__.core.invoke('execute_command', {
+        command: 'git status --porcelain=v1 --branch',
+        workingDir
+      })
+
+      if (statusOutput) {
+        updateStatus(statusOutput)
+      }
+
+      // 执行 git diff --numstat 获取添加/删除行数
+      const diffOutput = await window.__TAURI__.core.invoke('execute_command', {
+        command: 'git diff --numstat',
+        workingDir
+      })
+
+      if (diffOutput) {
+        const lines = diffOutput.trim().split('\n')
+        let totalAdditions = 0
+        let totalDeletions = 0
+
+        for (const line of lines) {
+          const parts = line.split('\t')
+          if (parts.length >= 2) {
+            totalAdditions += parseInt(parts[0]) || 0
+            totalDeletions += parseInt(parts[1]) || 0
+          }
+        }
+
+        gitStatus.value.additions = totalAdditions
+        gitStatus.value.deletions = totalDeletions
+      }
+    } catch (error) {
+      console.error('刷新 Git 状态失败:', error)
+      reset()
+    }
   }
 
   return {
@@ -135,7 +188,7 @@ export const useGitStore = defineStore('git', () => {
     isGitRepo,
     updateStatus,
     updateHistory,
+    refreshStatus,
     reset
   }
 })
-

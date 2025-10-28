@@ -13,6 +13,7 @@ import { useCommandSuggestion } from '../composables/useCommandSuggestion'
 import WarpModeBar from './WarpModeBar.vue'
 import FilePickerModal from './FilePickerModal.vue'
 import AutocompleteMenu from './AutocompleteMenu.vue'
+import GitStatusBar from './GitStatusBar.vue'
 import '@xterm/xterm/css/xterm.css'
 
 const props = defineProps({
@@ -1078,8 +1079,7 @@ const clearTerminal = () => {
   if (terminal) {
     terminal.clear()
     terminalBuffer.value = []
-    terminal.write('\x1b[32m✓ 终端已清空\x1b[0m
-')
+    terminal.write('\x1b[32m✓ 终端已清空\x1b[0m\r\n')
   }
 }
 
@@ -1324,6 +1324,41 @@ onDeactivated(() => {
   saveSessionData()
 })
 
+// Git 状态栏相关
+const commandSuggestion = ref('')
+
+// 处理 Git 命令执行
+const handleGitCommand = (command) => {
+  if (terminal && command) {
+    // 清除当前输入
+    if (currentInput.value) {
+      for (let i = 0; i < currentInput.value.length; i++) {
+        terminal.write('\b \b')
+      }
+    }
+
+    // 写入命令
+    terminal.write(command)
+    currentInput.value = command
+
+    // 回车执行
+    setTimeout(() => {
+      terminal.write('\r')
+      executeCommand(command)
+    }, 100)
+  }
+}
+
+// 应用命令建议
+const applyGitSuggestion = (suggestion) => {
+  bottomInput.value = suggestion
+  handleBottomInputChange()
+  // 聚焦到输入框
+  if (bottomInputRef.value) {
+    bottomInputRef.value.focus()
+  }
+}
+
 onUnmounted(async () => {
   // 保存会话数据
   saveSessionData()
@@ -1351,8 +1386,21 @@ onUnmounted(async () => {
 
 <template>
   <div :class="['terminal-container', { visible }]">
-    <!-- Warp模式栏 -->
-    <WarpModeBar 
+    <!-- 上部：Git状态栏 -->
+    <GitStatusBar
+      :current-dir="currentDir"
+      @execute-command="handleGitCommand"
+    />
+
+    <!-- 中部：终端显示区域 -->
+    <div
+      class="terminal-pane"
+      ref="terminalRef"
+      @click="focusTerminal"
+    />
+
+    <!-- 下部：Warp模式栏 -->
+    <WarpModeBar
       :mode="warpMode"
       :current-model="currentModel"
       :session-id="session.id"
@@ -1360,80 +1408,7 @@ onUnmounted(async () => {
       @update:current-model="handleModelUpdate"
       @mention-file="handleMentionFile"
     />
-    
-    <!-- 终端 -->
-    <div
-      class="terminal-pane"
-      ref="terminalRef"
-      @click="focusTerminal"
-    />
-    
-    <!-- iFlow风格输入栏 -->
-    <div class="iflow-input-bar">
-      <div class="input-actions">
-        <button class="action-btn" title="对话">
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-            <path d="M8 1C11.866 1 15 4.13401 15 8C15 11.866 11.866 15 8 15C4.13401 15 1 11.866 1 8C1 4.13401 4.13401 1 8 1Z" stroke="currentColor" stroke-width="1.5"/>
-            <path d="M5.5 7.5L8 10L10.5 7.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-        </button>
-        
-        <button class="action-btn" @click="handleMentionFile" title="文件">
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-            <path d="M3 3H13V13H3V3Z" stroke="currentColor" stroke-width="1.5"/>
-            <path d="M6 6H10M6 8H10M6 10H8" stroke="currentColor" stroke-width="1" stroke-linecap="round"/>
-          </svg>
-          <span class="action-text">~</span>
-        </button>
-        
-        <button class="action-btn" title="执行">
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-            <path d="M3 3L13 8L3 13V3Z" fill="currentColor"/>
-          </svg>
-          <span class="action-text">→</span>
-        </button>
-        
-        <button class="action-btn" title="表情">
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-            <circle cx="8" cy="8" r="5" stroke="currentColor" stroke-width="1.5"/>
-            <circle cx="6" cy="7" r="1" fill="currentColor"/>
-            <circle cx="10" cy="7" r="1" fill="currentColor"/>
-            <path d="M5 10C5 10 6.5 11.5 8 11.5C9.5 11.5 11 10 11 10" stroke="currentColor" stroke-width="1" stroke-linecap="round"/>
-          </svg>
-        </button>
-        
-        <button class="action-btn" @click="manualInitializeTerminal" title="重新初始化终端">
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-            <path d="M8 2C5.79 2 4 3.79 4 6v2H2l4 4 4-4H6V6c0-1.11 0.89-2 2-2s2 0.89 2 2c0 1.66-2 3-2 3" stroke="currentColor" stroke-width="1.5" fill="none"/>
-          </svg>
-          <span class="action-text">⟳</span>
-        </button>
 
-        <button class="action-btn" @click="sendNotification" title="邮件">
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-            <rect x="2" y="4" width="12" height="8" rx="1" stroke="currentColor" stroke-width="1.5"/>
-            <path d="M2 5L8 9L14 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-        </button>
-      </div>
-      
-      <div class="input-area">
-        <div class="prompt-arrow">></div>
-        <input
-          ref="bottomInputRef"
-          v-model="bottomInput"
-          type="text"
-          class="input-field-active"
-          placeholder="输入命令..."
-          @keydown="handleBottomInputKeydown"
-          @input="handleBottomInputChange"
-        />
-        <div v-if="bottomInputSuggestion" class="bottom-suggestion">
-          {{ bottomInputSuggestion }}
-        </div>
-      </div>
-    </div>
-    
     <!-- AI 助手面板 -->
     <div v-if="showAIPanel" class="ai-panel">
       <div class="ai-header">
@@ -1556,137 +1531,12 @@ onUnmounted(async () => {
   flex: 1;
   position: relative;
   padding: 16px;
-  padding-bottom: 80px; /* 为iFlow风格输入栏留出空间 */
   overflow: hidden;
   font-family: 'SF Mono', Menlo, Monaco, 'Courier New', monospace;
   font-size: 13px;
   line-height: 1.4;
   color: #1a1a1a;
   background: #ffffff;
-}
-
-/* iFlow风格输入栏 */
-.iflow-input-bar {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 60px;
-  background: #ffffff;
-  border-top: 1px solid #e5e5e5;
-  display: flex;
-  align-items: center;
-  padding: 12px 16px;
-  gap: 12px;
-}
-
-.input-actions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.action-btn {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  padding: 6px 8px;
-  background: transparent;
-  border: none;
-  border-radius: 6px;
-  color: #8e8e93;
-  cursor: pointer;
-  font-size: 13px;
-  transition: all 0.2s ease;
-}
-
-.action-btn:hover {
-  background: #f5f5f5;
-  color: #1a1a1a;
-}
-
-.action-text {
-  font-size: 12px;
-  font-weight: 500;
-}
-
-.input-area {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  position: relative;
-  background: #ffffff;
-  border: 2px solid #0071e3;
-  border-radius: 8px;
-  padding: 8px 12px;
-  gap: 8px;
-  transition: all 0.2s ease;
-}
-
-.input-area:hover {
-  border-color: #005bb5;
-}
-
-.prompt-arrow {
-  color: #0071e3;
-  font-weight: bold;
-  font-size: 14px;
-}
-
-.input-field-active {
-  flex: 1;
-  border: none;
-  outline: none;
-  background: transparent;
-  font-family: 'SF Mono', Menlo, Monaco, 'Courier New', monospace;
-  font-size: 13px;
-  color: #1a1a1a;
-  padding: 0;
-  min-height: 20px;
-}
-
-.input-field-active::placeholder {
-  color: #8e8e93;
-}
-
-.bottom-suggestion {
-  position: absolute;
-  left: 52px; /* 箭头宽度 + 间距 */
-  color: #8e8e93;
-  pointer-events: none;
-  font-family: 'SF Mono', Menlo, Monaco, 'Courier New', monospace;
-  font-size: 13px;
-  white-space: nowrap;
-  overflow: hidden;
-}
-
-.input-field {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  min-height: 20px;
-  position: relative;
-}
-
-.cursor {
-  width: 8px;
-  height: 16px;
-  background: #1a1a1a;
-  animation: blink 1s infinite;
-}
-
-@keyframes blink {
-  0%, 50% { opacity: 1; }
-  51%, 100% { opacity: 0; }
-}
-
-@keyframes pulse {
-  0%, 100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.5;
-  }
 }
 
 /* AI 模式指示器 */

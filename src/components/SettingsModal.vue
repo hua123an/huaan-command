@@ -1,4 +1,8 @@
-<script setup>
+<!-- 导入完整仪表板 -->
+<GitDashboard :current-dir="currentDir" :session-id="sessionId" />
+
+<!-- 或导入单个组件 -->
+<GitPanel :current-dir="currentDir" :session-id="sessionId" /><script setup>
 /* global getComputedStyle */
 import { ref, computed, onMounted } from 'vue'
 import { useSettingsStore } from '../stores/settings'

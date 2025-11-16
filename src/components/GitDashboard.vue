@@ -21,37 +21,22 @@ const viewOptions = [
     <div class="git-dashboard">
         <!-- 视图切换 -->
         <div class="view-switcher">
-            <button
-                v-for="option in viewOptions"
-                :key="option.id"
-                :class="['view-btn', { active: activeView === option.id }]"
-                :title="option.label"
-                @click="activeView = option.id"
-            >
+            <button v-for="option in viewOptions" :key="option.id"
+                :class="['view-btn', { active: activeView === option.id }]" :title="option.label"
+                @click="activeView = option.id">
                 {{ option.icon }} {{ option.label }}
             </button>
         </div>
 
         <!-- 内容区域 -->
         <div class="content-area">
-            <GitPanel
-                v-show="activeView === 'panel'"
-                :current-dir="currentDir"
-                :session-id="sessionId"
-                class="view-container"
-            />
+            <GitPanel v-show="activeView === 'panel'" :current-dir="currentDir" :session-id="sessionId"
+                class="view-container" />
 
-            <GitVisualization
-                v-show="activeView === 'visualization'"
-                :current-dir="currentDir"
-                class="view-container"
-            />
+            <GitVisualization v-show="activeView === 'visualization'" :current-dir="currentDir"
+                class="view-container" />
 
-            <CommitGraph
-                v-show="activeView === 'commits'"
-                :current-dir="currentDir"
-                class="view-container"
-            />
+            <CommitGraph v-show="activeView === 'commits'" :current-dir="currentDir" class="view-container" />
         </div>
     </div>
 </template>

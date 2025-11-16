@@ -12,7 +12,7 @@ const showDashboard = ref(false)
         <!-- 侧边栏说明 -->
         <div class="sidebar">
             <h2>🎨 Git 可视化演示</h2>
-            
+
             <div class="demo-section">
                 <h3>📋 功能概览</h3>
                 <div class="feature-list">
@@ -159,10 +159,7 @@ import GitDashboard from '@/components/GitDashboard.vue'
 
             <!-- Git Dashboard -->
             <div v-else class="dashboard-container">
-                <GitDashboard
-                    :current-dir="currentDir"
-                    :session-id="sessionId"
-                />
+                <GitDashboard :current-dir="currentDir" :session-id="sessionId" />
             </div>
         </div>
     </div>

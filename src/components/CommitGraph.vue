@@ -198,18 +198,8 @@ const stats = computed(() => {
         <!-- 过滤和排序 -->
         <div class="controls">
             <div class="filter-group">
-                <input
-                    v-model="filterAuthor"
-                    type="text"
-                    placeholder="Filter by author..."
-                    class="filter-input"
-                />
-                <input
-                    v-model="filterKeyword"
-                    type="text"
-                    placeholder="Search message..."
-                    class="filter-input"
-                />
+                <input v-model="filterAuthor" type="text" placeholder="Filter by author..." class="filter-input" />
+                <input v-model="filterKeyword" type="text" placeholder="Search message..." class="filter-input" />
                 <select v-model="sortBy" class="filter-select">
                     <option value="date">Sort by Date</option>
                     <option value="author">Sort by Author</option>
@@ -228,30 +218,19 @@ const stats = computed(() => {
         </div>
 
         <div v-else class="commit-list">
-            <div
-                v-for="commit in filteredCommits"
-                :key="commit.id"
+            <div v-for="commit in filteredCommits" :key="commit.id"
                 :class="['commit-item', { selected: selectedCommits.has(commit.id) }]"
-                @click.ctrl="toggleSelect(commit.id)"
-                @click.meta="toggleSelect(commit.id)"
-            >
+                @click.ctrl="toggleSelect(commit.id)" @click.meta="toggleSelect(commit.id)">
                 <!-- 左侧选择框 -->
                 <div class="commit-checkbox">
-                    <input
-                        type="checkbox"
-                        :checked="selectedCommits.has(commit.id)"
-                        @change="toggleSelect(commit.id)"
-                    />
+                    <input type="checkbox" :checked="selectedCommits.has(commit.id)"
+                        @change="toggleSelect(commit.id)" />
                 </div>
 
                 <!-- 提交信息 -->
                 <div class="commit-info">
                     <div class="commit-header">
-                        <span
-                            class="commit-hash"
-                            title="Click to copy"
-                            @click="copyToClipboard(commit.id)"
-                        >
+                        <span class="commit-hash" title="Click to copy" @click="copyToClipboard(commit.id)">
                             {{ commit.shortHash }}
                         </span>
                         <span class="commit-message">{{ commit.subject }}</span>
@@ -277,18 +256,10 @@ const stats = computed(() => {
 
                 <!-- 操作按钮 -->
                 <div class="commit-actions">
-                    <button
-                        class="action-btn"
-                        title="Show commit details"
-                        @click.stop="showCommitDetail(commit)"
-                    >
+                    <button class="action-btn" title="Show commit details" @click.stop="showCommitDetail(commit)">
                         👁️
                     </button>
-                    <button
-                        class="action-btn"
-                        title="Revert this commit"
-                        @click.stop="revertCommit(commit)"
-                    >
+                    <button class="action-btn" title="Revert this commit" @click.stop="revertCommit(commit)">
                         ↩️
                     </button>
                 </div>

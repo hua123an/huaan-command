@@ -168,13 +168,10 @@ const renderBranchTree = (tree, depth = 0) => {
 
         <!-- 选项卡 -->
         <div class="chart-tabs">
-            <button
-                v-for="tab in ['history', 'stats', 'contributors', 'timeline']"
-                :key="tab"
-                :class="['tab-btn', { active: activeChart === tab }]"
-                @click="activeChart = tab"
-            >
-                {{ tab === 'history' ? '🌳 History' : tab === 'stats' ? '📊 Stats' : tab === 'contributors' ? '👥 Contributors' : '📈 Timeline' }}
+            <button v-for="tab in ['history', 'stats', 'contributors', 'timeline']" :key="tab"
+                :class="['tab-btn', { active: activeChart === tab }]" @click="activeChart = tab">
+                {{ tab === 'history' ? '🌳 History' : tab === 'stats' ? '📊 Stats' : tab === 'contributors' ? '👥
+                Contributors' : '📈 Timeline' }}
             </button>
         </div>
 
@@ -184,12 +181,8 @@ const renderBranchTree = (tree, depth = 0) => {
             <div v-if="activeChart === 'history'" class="chart-section">
                 <h3>Branch Tree</h3>
                 <div class="branch-tree">
-                    <div
-                        v-for="(branch, idx) in renderBranchTree(branchTree)"
-                        :key="idx"
-                        class="branch-node"
-                        :style="{ paddingLeft: branch.indent + 'px' }"
-                    >
+                    <div v-for="(branch, idx) in renderBranchTree(branchTree)" :key="idx" class="branch-node"
+                        :style="{ paddingLeft: branch.indent + 'px' }">
                         <span v-if="!branch.isLeaf" class="branch-icon">📁</span>
                         <span v-else class="branch-icon">🔀</span>
                         <span class="branch-name">{{ branch.name }}</span>
@@ -204,10 +197,9 @@ const renderBranchTree = (tree, depth = 0) => {
                     <div v-for="(file, idx) in gitStats.fileChanges" :key="idx" class="file-change-item">
                         <div class="file-name">{{ file.file }}</div>
                         <div class="file-bar-container">
-                            <div
-                                class="file-bar"
-                                :style="{ width: (file.changes / Math.max(...gitStats.fileChanges.map(f => f.changes))) * 100 + '%' }"
-                            ></div>
+                            <div class="file-bar"
+                                :style="{ width: (file.changes / Math.max(...gitStats.fileChanges.map(f => f.changes))) * 100 + '%' }">
+                            </div>
                             <span class="file-count">{{ file.changes }}</span>
                         </div>
                     </div>
@@ -222,10 +214,9 @@ const renderBranchTree = (tree, depth = 0) => {
                         <div class="contributor-rank">{{ idx + 1 }}</div>
                         <div class="contributor-info">
                             <div class="contributor-name">{{ contrib.author }}</div>
-                            <div
-                                class="contributor-bar"
-                                :style="{ width: (contrib.commits / gitStats.contributors[0].commits) * 100 + '%' }"
-                            ></div>
+                            <div class="contributor-bar"
+                                :style="{ width: (contrib.commits / gitStats.contributors[0].commits) * 100 + '%' }">
+                            </div>
                         </div>
                         <div class="contributor-count">{{ contrib.commits }}</div>
                     </div>
@@ -236,16 +227,9 @@ const renderBranchTree = (tree, depth = 0) => {
             <div v-if="activeChart === 'timeline'" class="chart-section">
                 <h3>Daily Commits Timeline</h3>
                 <div class="timeline-chart">
-                    <div
-                        v-for="(day, idx) in gitStats.commitsPerDay"
-                        :key="idx"
-                        class="timeline-day"
-                        :title="`${day.date}: ${day.commits} commits`"
-                    >
-                        <div
-                            class="timeline-bar"
-                            :style="{ height: (day.commits / maxCommits * 60) + 'px' }"
-                        ></div>
+                    <div v-for="(day, idx) in gitStats.commitsPerDay" :key="idx" class="timeline-day"
+                        :title="`${day.date}: ${day.commits} commits`">
+                        <div class="timeline-bar" :style="{ height: (day.commits / maxCommits * 60) + 'px' }"></div>
                         <div class="timeline-date">{{ day.date.split('-')[2] }}</div>
                     </div>
                 </div>

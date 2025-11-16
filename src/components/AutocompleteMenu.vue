@@ -21,9 +21,13 @@ const emit = defineEmits(['select', 'close'])
 const selectedIndex = ref(0)
 
 // 监听建议列表变化，重置选中索引
-watch(() => props.suggestions, () => {
-  selectedIndex.value = 0
-}, { deep: true })
+watch(
+  () => props.suggestions,
+  () => {
+    selectedIndex.value = 0
+  },
+  { deep: true }
+)
 
 // 选择上一项
 const selectPrevious = () => {
@@ -47,7 +51,7 @@ const confirmSelection = () => {
 }
 
 // 点击选择
-const handleClick = (index) => {
+const handleClick = index => {
   selectedIndex.value = index
   confirmSelection()
 }
@@ -83,9 +87,7 @@ defineExpose({
         <span v-if="index === selectedIndex" class="item-badge">Enter</span>
       </div>
     </div>
-    <div class="autocomplete-footer">
-      {{ suggestions.length }} 个建议
-    </div>
+    <div class="autocomplete-footer">{{ suggestions.length }} 个建议</div>
   </div>
 </template>
 

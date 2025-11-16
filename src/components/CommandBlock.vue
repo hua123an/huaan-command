@@ -32,7 +32,7 @@ onMounted(() => {
   })
 
   terminal.open(terminalRef.value)
-  
+
   // 写入输出内容
   if (props.output) {
     terminal.write(props.output)
@@ -40,11 +40,14 @@ onMounted(() => {
 })
 
 // 监听主题变化
-watch(() => settingsStore.settings.theme, () => {
-  if (terminal) {
-    terminal.options.theme = getTerminalTheme()
+watch(
+  () => settingsStore.settings.theme,
+  () => {
+    if (terminal) {
+      terminal.options.theme = getTerminalTheme()
+    }
   }
-})
+)
 
 // 监听系统主题变化
 const darkModeQuery = window.matchMedia('(prefers-color-scheme: dark)')
@@ -55,26 +58,34 @@ const handleSystemThemeChange = () => {
 }
 darkModeQuery.addEventListener('change', handleSystemThemeChange)
 
-const formatTime = (timestamp) => {
+const formatTime = timestamp => {
   const date = new Date(timestamp)
   return date.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
 }
 
 const getStatusIcon = () => {
   switch (props.status) {
-    case 'running': return '⏳'
-    case 'success': return '✓'
-    case 'error': return '✗'
-    default: return '•'
+    case 'running':
+      return '⏳'
+    case 'success':
+      return '✓'
+    case 'error':
+      return '✗'
+    default:
+      return '•'
   }
 }
 
 const getStatusColor = () => {
   switch (props.status) {
-    case 'running': return '#ffd60a'
-    case 'success': return '#32d74b'
-    case 'error': return '#ff453a'
-    default: return '#636366'
+    case 'running':
+      return '#ffd60a'
+    case 'success':
+      return '#32d74b'
+    case 'error':
+      return '#ff453a'
+    default:
+      return '#636366'
   }
 }
 </script>
@@ -182,4 +193,3 @@ const getStatusColor = () => {
   background: rgba(255, 69, 58, 0.05);
 }
 </style>
-

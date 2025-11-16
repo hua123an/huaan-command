@@ -8,19 +8,10 @@
         <span class="history-count">{{ historyCount }}</span>
       </div>
       <div class="header-actions">
-        <button
-          class="icon-btn"
-          title="刷新"
-          :disabled="isLoading"
-          @click="refresh"
-        >
+        <button class="icon-btn" title="刷新" :disabled="isLoading" @click="refresh">
           <span :class="{ spinning: isLoading }">🔄</span>
         </button>
-        <button
-          class="icon-btn"
-          title="折叠/展开"
-          @click="toggleCollapse"
-        >
+        <button class="icon-btn" title="折叠/展开" @click="toggleCollapse">
           {{ isCollapsed ? '▼' : '▲' }}
         </button>
       </div>
@@ -101,11 +92,7 @@
 
           <!-- 操作按钮 -->
           <div class="item-actions">
-            <button
-              class="action-btn"
-              title="回滚到此操作"
-              @click.stop="rollbackTo(item.id)"
-            >
+            <button class="action-btn" title="回滚到此操作" @click.stop="rollbackTo(item.id)">
               ⏪ 回滚到此
             </button>
           </div>
@@ -119,12 +106,8 @@
         <h4>{{ confirmTitle }}</h4>
         <p>{{ confirmMessage }}</p>
         <div class="confirm-actions">
-          <button class="btn btn-secondary" @click="cancelConfirm">
-            取消
-          </button>
-          <button class="btn btn-danger" @click="executeConfirm">
-            确认
-          </button>
+          <button class="btn btn-secondary" @click="cancelConfirm">取消</button>
+          <button class="btn btn-danger" @click="executeConfirm">确认</button>
         </div>
       </div>
     </div>
@@ -204,7 +187,7 @@ const handleClear = () => {
   showConfirm.value = true
 }
 
-const rollbackTo = (operationId) => {
+const rollbackTo = operationId => {
   const operation = history.value.find(op => op.id === operationId)
   if (!operation) return
 
@@ -236,11 +219,11 @@ const cancelConfirm = () => {
   confirmAction.value = null
 }
 
-const selectItem = (item) => {
+const selectItem = item => {
   selectedItem.value = item
 }
 
-const getOperationIcon = (type) => {
+const getOperationIcon = type => {
   const icons = {
     file_write: '📝',
     file_delete: '🗑️',
@@ -251,7 +234,7 @@ const getOperationIcon = (type) => {
   return icons[type] || '🔧'
 }
 
-const formatTime = (timestamp) => {
+const formatTime = timestamp => {
   const now = Date.now()
   const diff = now - timestamp
 
@@ -269,7 +252,7 @@ const formatTime = (timestamp) => {
 }
 
 // 键盘快捷键
-const handleKeydown = (e) => {
+const handleKeydown = e => {
   if ((e.ctrlKey || e.metaKey) && !e.shiftKey && e.key === 'z') {
     e.preventDefault()
     handleUndo()
@@ -375,8 +358,12 @@ onMounted(() => {
 }
 
 @keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .panel-content {

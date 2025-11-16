@@ -1,0 +1,67 @@
+{
+  "name": "claude-config-switcher",
+  "version": "1.1.0",
+  "description": "Claude Code 模型服务商配置切换工具 - 轻松切换不同的 Anthropic API 兼容服务商",
+  "main": "claude-config-switcher.js",
+  "bin": {
+    "claude-switcher": "./bin/claude-switcher",
+    "ccs": "./bin/claude-switcher",
+    "ccs-select": "./bin/ccs-select"
+  },
+  "scripts": {
+    "start": "node claude-config-switcher.js",
+    "test": "node tests/test-runner.js",
+    "test:config": "node tests/test.configManager.js",
+    "test:validators": "node tests/test.validators.js",
+    "test:ui": "node tests/test.ui.js",
+    "test:e2e": "node tests/test.e2e.js",
+    "test:coverage": "node test-coverage.js",
+    "lint": "node linter.js",
+    "pack": "npm pack",
+    "prepublishOnly": "npm test"
+  },
+  "keywords": [
+    "claude",
+    "claude-code",
+    "anthropic",
+    "api",
+    "config",
+    "switcher",
+    "model",
+    "provider",
+    "cli",
+    "tool",
+    "development"
+  ],
+  "author": {
+    "name": "Claude Code Team",
+    "email": "team@anthropic.com",
+    "url": "https://anthropic.com"
+  },
+  "license": "MIT",
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/anthropics/claude-config-switcher.git"
+  },
+  "bugs": {
+    "url": "https://github.com/anthropics/claude-config-switcher/issues",
+    "email": "team@anthropic.com"
+  },
+  "homepage": "https://github.com/anthropics/claude-config-switcher#readme",
+  "files": [
+    "bin/",
+    "src/",
+    "completions/",
+    "examples/",
+    "claude-config-switcher.js",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md"
+  ],
+  "preferGlobal": true,
+  "devDependencies": {},
+  "dependencies": {}
+}

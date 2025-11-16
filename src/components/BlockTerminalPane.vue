@@ -19,19 +19,16 @@ import { useDirectoryTracker } from '../composables/useDirectoryTracker'
 const props = defineProps({
   session: Object,
   visible: Boolean
-});
+})
 
-const terminalStore = useTerminalStore();
-const settingsStore = useSettingsStore();
-const logsStore = useLogsStore();
-const { getTerminalTheme } = useTheme();
-const { isBuiltinCommand, getCommandPrompt, getHelpMessage } = useBuiltinCommands();
+const terminalStore = useTerminalStore()
+const settingsStore = useSettingsStore()
+const logsStore = useLogsStore()
+const { getTerminalTheme } = useTheme()
+const { isBuiltinCommand, getCommandPrompt, getHelpMessage } = useBuiltinCommands()
 
 // 目录追踪功能（使用后端接口）
-const {
-  currentDir,
-  startTracking
-} = useDirectoryTracker(props.session.id)
+const { currentDir, startTracking } = useDirectoryTracker(props.session.id)
 
 // 状态
 const warpMode = ref('terminal')
@@ -68,13 +65,13 @@ const initTerminal = async () => {
 
     // 创建 xterm.js 实例（支持直接输入）
     terminal = new Terminal({
-      cursorBlink: true,  // 启用光标闪烁
+      cursorBlink: true, // 启用光标闪烁
       fontSize: 14,
       fontFamily: 'SF Mono, Menlo, Monaco, Courier New, monospace',
       theme: getTerminalTheme(),
       allowTransparency: true,
       scrollback: 10000,
-      disableStdin: false  // 启用标准输入，支持直接在终端输入
+      disableStdin: false // 启用标准输入，支持直接在终端输入
     })
 
     fitAddon = new FitAddon()
@@ -93,66 +90,67 @@ const initTerminal = async () => {
     let isInitialOutput = true
     let initialOutputBuffer = ''
 
-    let isHidingOutput = false;
+    let isHidingOutput = false
 
     // 监听终端输出
-    unlisten = await listen(`terminal-output-${props.session.id}`, (event) => {
+    unlisten = await listen(`terminal-output-${props.session.id}`, event => {
       if (terminal) {
-        const output = event.payload;
+        const output = event.payload
 
         // Stateful filtering for hidden commands
         if (output.includes('START___PWD_MARKER_')) {
-          isHidingOutput = true;
+          isHidingOutput = true
           // If the end marker is in the same chunk, handle it immediately
           if (output.includes('END___PWD_MARKER_')) {
-            isHidingOutput = false;
+            isHidingOutput = false
           }
-          return; // Discard this chunk
+          return // Discard this chunk
         } else if (output.includes('END___PWD_MARKER_')) {
-          isHidingOutput = false;
-          return; // Discard this chunk
+          isHidingOutput = false
+          return // Discard this chunk
         } else if (isHidingOutput) {
-          return; // Discard chunks while in hiding mode
+          return // Discard chunks while in hiding mode
         }
 
         // 初始阶段：收集并过滤系统欢迎信息
         if (isInitialOutput) {
-          initialOutputBuffer += output;
+          initialOutputBuffer += output
 
-          const hasPrompt = initialOutputBuffer.match(/>\s*$/) ||
+          const hasPrompt =
+            initialOutputBuffer.match(/>\s*$/) ||
             initialOutputBuffer.match(/[$%#]\s*$/) ||
-            initialOutputBuffer.match(/[a-zA-Z0-9_-]+@[a-zA-Z0-9_-]+/);
+            initialOutputBuffer.match(/[a-zA-Z0-9_-]+@[a-zA-Z0-9_-]+/)
 
           if (hasPrompt) {
-            isInitialOutput = false;
+            isInitialOutput = false
             const cleanOutput = initialOutputBuffer
               .replace(/The default interactive shell is now.*?\n/g, '')
               .replace(/To update your account to use.*?\n/g, '')
               .replace(/For more details.*?\n/g, '')
               .replace(/chsh -s.*?\n/g, '')
               .replace(/https?:\/\/[^\s]+/g, '')
-              .trim();
+              .trim()
 
             if (cleanOutput) {
-              terminal.write(cleanOutput);
+              terminal.write(cleanOutput)
             }
-            initialOutputBuffer = '';
+            initialOutputBuffer = ''
           }
-          return;
+          return
         }
 
         // 初始化完成后，正常显示所有输出
-        terminal.write(output);
+        terminal.write(output)
 
         // 保存更新后的目录到 store（目录追踪现在由后端接口处理）
         if (currentDir.value) {
-          terminalStore.updateSessionCurrentDir(props.session.id, currentDir.value);
+          terminalStore.updateSessionCurrentDir(props.session.id, currentDir.value)
         }
       }
-    });
+    })
 
     // 监听终端输入并发送到 PTY
-    terminal.onData((data) => {
+    terminal.onData(data => {
       // 直接发送所有输入到 PTY，不做任何拦截
       invoke('write_terminal', {
         sessionId: props.session.id,
@@ -175,7 +173,8 @@ const initTerminal = async () => {
       warpMode.value = sessionData.warpMode || 'terminal'
       currentModel.value = sessionData.currentModel || 'terminal'
       // 如果保存的是 ~，展开为实际路径
-      currentDir.value = sessionData.currentDir === '~' ? actualHome : (sessionData.currentDir || actualHome)
+      currentDir.value =
+        sessionData.currentDir === '~' ? actualHome : sessionData.currentDir || actualHome
       conversationHistory.value = sessionData.conversationHistory || []
     } else {
       // 新会话，使用实际的 HOME 目录
@@ -206,23 +205,29 @@ onMounted(async () => {
 })
 
 // 监听主题变化
-watch(() => settingsStore.settings.theme, () => {
-  if (terminal) {
-    terminal.options.theme = getTerminalTheme()
+watch(
+  () => settingsStore.settings.theme,
+  () => {
+    if (terminal) {
+      terminal.options.theme = getTerminalTheme()
+    }
   }
-})
+)
 
 // 监听 shell 类型变化，重新初始化终端
-watch(() => settingsStore.settings.shell, async () => {
-  console.log('🔄 Shell 类型变化，重新初始化终端')
-  // 先关闭旧终端
-  await invoke('close_terminal', {
-    sessionId: props.session.id
-  }).catch(err => console.error('关闭终端失败:', err))
+watch(
+  () => settingsStore.settings.shell,
+  async () => {
+    console.log('🔄 Shell 类型变化，重新初始化终端')
+    // 先关闭旧终端
+    await invoke('close_terminal', {
+      sessionId: props.session.id
+    }).catch(err => console.error('关闭终端失败:', err))
 
-  // 重新初始化
-  await initTerminal()
-})
+    // 重新初始化
+    await initTerminal()
+  }
+)
 
 // 监听系统主题变化（当主题为auto时）
 const darkModeQuery = window.matchMedia('(prefers-color-scheme: dark)')
@@ -234,20 +239,23 @@ const handleSystemThemeChange = () => {
 darkModeQuery.addEventListener('change', handleSystemThemeChange)
 
 // 监听 visible 属性变化
-watch(() => props.visible, (newVisible) => {
-  if (newVisible && terminal && fitAddon) {
-    // 当终端变为可见时，重新调整大小
-    nextTick(() => {
-      fitAddon.fit()
-      const { cols, rows } = terminal
-      invoke('resize_terminal', {
-        sessionId: props.session.id,
-        cols,
-        rows
-      }).catch(err => console.error('调整终端大小失败:', err))
-    })
+watch(
+  () => props.visible,
+  newVisible => {
+    if (newVisible && terminal && fitAddon) {
+      // 当终端变为可见时，重新调整大小
+      nextTick(() => {
+        fitAddon.fit()
+        const { cols, rows } = terminal
+        invoke('resize_terminal', {
+          sessionId: props.session.id,
+          cols,
+          rows
+        }).catch(err => console.error('调整终端大小失败:', err))
+      })
+    }
   }
-})
+)
 
 onUnmounted(() => {
   window.removeEventListener('resize', handleResize)
@@ -279,7 +287,7 @@ const handleResize = () => {
 }
 
 // 处理命令提交
-const handleSubmit = async (command) => {
+const handleSubmit = async command => {
   // 检查是否是内置命令
   if (isBuiltinCommand(command)) {
     terminal.write(`\r\n`)
@@ -312,20 +320,20 @@ const focusTerminal = () => {
 }
 
 // 智能任务处理（项目分析、代码修改等）
-const handleIntelligentTask = async (prompt) => {
+const handleIntelligentTask = async prompt => {
   conversationHistory.value.push({
     role: 'user',
     content: prompt
-  });
+  })
   // AI 功能已移除
   terminal.write('\r\n\x1b[31mAI 功能已移除\x1b[0m\r\n')
-  terminal.scrollToBottom();
+  terminal.scrollToBottom()
   // 保存会话数据
-  terminalStore.updateSessionConversation(props.session.id, conversationHistory.value);
-};
+  terminalStore.updateSessionConversation(props.session.id, conversationHistory.value)
+}
 
 // 处理内置命令
-const handleBuiltinCommand = async (command) => {
+const handleBuiltinCommand = async command => {
   try {
     // 特殊处理 :help 和 :list
     if (command === ':help' || command === ':list') {
@@ -360,15 +368,14 @@ const handleBuiltinCommand = async (command) => {
 }
 
 // 处理 AI 命令
-const handleAICommand = async (prompt) => {
+const handleAICommand = async prompt => {
   // 检测是否是复杂任务（项目分析、代码修改等）
   // 改进的正则：更宽松地匹配项目相关问题
-  const isComplexTask = (
+  const isComplexTask =
     /(熟悉|了解|分析|查看|理解|介绍|讲解|说明).*(项目|代码|这个)/.test(prompt) ||
     /(项目|代码).*(是什么|干什么|做什么|功能|作用|用途)/.test(prompt) ||
     /(这个|当前).*(项目|代码)/.test(prompt) ||
     /修改|添加.*文件|重构/.test(prompt)
-  )
 
   if (isComplexTask) {
     // 使用智能任务处理
@@ -383,14 +390,14 @@ const handleAICommand = async (prompt) => {
 }
 
 // 模式切换
-const handleModeUpdate = (mode) => {
+const handleModeUpdate = mode => {
   warpMode.value = mode
   terminalStore.updateSessionMode(props.session.id, mode)
   inputComponent.value?.focus()
 }
 
 // 模型切换
-const handleModelUpdate = (model) => {
+const handleModelUpdate = model => {
   currentModel.value = model
   // AI 功能已移除
   terminalStore.updateSessionModel(props.session.id, model)
@@ -401,7 +408,7 @@ const handleMentionFile = () => {
   showFilePicker.value = true
 }
 
-const handleFileSelect = async (file) => {
+const handleFileSelect = async file => {
   if (file.isDir) {
     // 只更新当前目录状态即可
     currentDir.value = file.path
@@ -420,19 +427,33 @@ const handleFileSelect = async (file) => {
     <div class="bottom-area">
       <!-- Warp 模式栏 -->
       <WarpModeBar
-:mode="warpMode" :current-model="currentModel" :session-id="session.id"
-        @update:mode="handleModeUpdate" @update:current-model="handleModelUpdate" @mention-file="handleMentionFile" />
+        :mode="warpMode"
+        :current-model="currentModel"
+        :session-id="session.id"
+        @update:mode="handleModeUpdate"
+        @update:current-model="handleModelUpdate"
+        @mention-file="handleMentionFile"
+      />
 
       <!-- 固定底部输入框 -->
       <FixedInput
-ref="inputComponent" :mode="warpMode" :current-model="currentModel" :current-dir="currentDir"
-        @submit="handleSubmit" @update:mode="handleModeUpdate" @mention-file="handleMentionFile" />
+        ref="inputComponent"
+        :mode="warpMode"
+        :current-model="currentModel"
+        :current-dir="currentDir"
+        @submit="handleSubmit"
+        @update:mode="handleModeUpdate"
+        @mention-file="handleMentionFile"
+      />
     </div>
 
     <!-- 文件选择器 -->
     <FilePickerModal
-:show="showFilePicker" :current-dir="currentDir" @select="handleFileSelect"
-      @close="showFilePicker = false" />
+      :show="showFilePicker"
+      :current-dir="currentDir"
+      @select="handleFileSelect"
+      @close="showFilePicker = false"
+    />
   </div>
 </template>
 
@@ -450,7 +471,9 @@ ref="inputComponent" :mode="warpMode" :current-model="currentModel" :current-dir
   background: var(--terminal-bg);
   opacity: 0;
   pointer-events: none;
-  transition: opacity 0.2s, background-color 0.3s ease;
+  transition:
+    opacity 0.2s,
+    background-color 0.3s ease;
 }
 
 .block-terminal-pane.visible {

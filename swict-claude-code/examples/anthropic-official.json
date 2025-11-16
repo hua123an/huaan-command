@@ -1,0 +1,9 @@
+{
+  "name": "anthropic-official",
+  "displayName": "Anthropic Official API",
+  "description": "Anthropic 官方 API 端点",
+  "baseUrl": "https://api.anthropic.com",
+  "model": "claude-sonnet-4-5-20250929",
+  "tags": ["official", "production", "recommended"],
+  "notes": "推荐用于生产环境，稳定可靠"
+}

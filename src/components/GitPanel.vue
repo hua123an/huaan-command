@@ -1,13 +1,11 @@
 <script setup>
-import { ref, computed, watch, onMounted } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { invoke } from '@tauri-apps/api/core'
 
 const props = defineProps({
     sessionId: String,
     currentDir: String
 })
-
-const emit = defineEmits(['execute-command'])
 
 // Git 状态
 const gitStatus = ref(null)
@@ -21,7 +19,6 @@ const activeTab = ref('status') // status, branches, commits, settings
 // 操作模式
 const showCommitModal = ref(false)
 const commitMessage = ref('')
-const selectedFiles = ref([])
 
 // 初始化数据
 const initGit = async () => {
@@ -58,7 +55,13 @@ const fetchStatus = async () => {
             workingDir: props.currentDir
         })
 
-        const lines = result.stdout.split('\n').filter(l => l.trim())
+        // 后端返回字符串，直接使用
+        const stdout = typeof result === 'string' ? result : result.stdout
+        if (!stdout) {
+            throw new Error('No output from git status command')
+        }
+
+        const lines = stdout.split('\n').filter(l => l.trim())
         const branchLine = lines[0] || ''
         const files = lines.slice(1)
 
@@ -106,7 +109,13 @@ const fetchBranches = async () => {
             workingDir: props.currentDir
         })
 
-        branches.value = result.stdout
+        // 后端返回字符串，直接使用
+        const stdout = typeof result === 'string' ? result : result.stdout
+        if (!stdout) {
+            throw new Error('No output from git branch command')
+        }
+
+        branches.value = stdout
             .split('\n')
             .filter(line => line.trim())
             .map(line => {
@@ -127,7 +136,13 @@ const fetchCommits = async () => {
             workingDir: props.currentDir
         })
 
-        commits.value = result.stdout
+        // 后端返回字符串，直接使用
+        const stdout = typeof result === 'string' ? result : result.stdout
+        if (!stdout) {
+            throw new Error('No output from git log command')
+        }
+
+        commits.value = stdout
             .split('\n')
             .filter(line => line.trim())
             .map(line => {
@@ -211,7 +226,7 @@ const doPull = async () => {
 }
 
 // 切换分支
-const switchBranch = async (branchName) => {
+const switchBranch = async branchName => {
     try {
         loading.value = true
         await invoke('execute_command', {
@@ -248,9 +263,11 @@ watch(() => props.currentDir, initGit, { immediate: true })
 // 计算属性
 const totalChanges = computed(() => {
     if (!gitStatus.value) return 0
-    return gitStatus.value.staged.length +
+    return (
+        gitStatus.value.staged.length +
         gitStatus.value.unstaged.length +
         gitStatus.value.untracked.length
+    )
 })
 
 const canCommit = computed(() => {
@@ -303,12 +320,8 @@ const canCommit = computed(() => {
                     <button class="btn btn-sm" :disabled="!canCommit" @click="showCommitModal = true">
                         💾 Commit
                     </button>
-                    <button class="btn btn-sm" :disabled="loading" @click="doPush">
-                        ⬆️ Push
-                    </button>
-                    <button class="btn btn-sm" :disabled="loading" @click="doPull">
-                        ⬇️ Pull
-                    </button>
+                    <button class="btn btn-sm" :disabled="loading" @click="doPush">⬆️ Push</button>
+                    <button class="btn btn-sm" :disabled="loading" @click="doPull">⬇️ Pull</button>
                 </div>
 
                 <!-- Staged 文件 -->
@@ -341,9 +354,7 @@ const canCommit = computed(() => {
                     </div>
                 </div>
 
-                <div v-if="gitStatus?.clean" class="status-clean">
-                    ✅ Working directory is clean
-                </div>
+                <div v-if="gitStatus?.clean" class="status-clean">✅ Working directory is clean</div>
             </div>
 
             <!-- 分支标签页 -->
@@ -371,11 +382,11 @@ const canCommit = computed(() => {
             <div v-if="activeTab === 'settings'" class="tab-content">
                 <div class="settings-group">
                     <label>Git 用户名</label>
-                    <input type="text" placeholder="Your name" class="input">
+                    <input type="text" placeholder="Your name" class="input" />
                 </div>
                 <div class="settings-group">
                     <label>Git 邮箱</label>
-                    <input type="email" placeholder="your@email.com" class="input">
+                    <input type="email" placeholder="your@email.com" class="input" />
                 </div>
                 <button class="btn btn-primary">保存设置</button>
             </div>
@@ -401,8 +412,8 @@ const canCommit = computed(() => {
     display: flex;
     flex-direction: column;
     height: 100%;
-    background: var(--terminal-bg, #1e1e1e);
-    color: var(--text-primary, #e0e0e0);
+    background: var(--bg-primary);
+    color: var(--text-primary);
     font-size: 12px;
     overflow: hidden;
 }
@@ -412,8 +423,8 @@ const canCommit = computed(() => {
     justify-content: space-between;
     align-items: center;
     padding: 12px;
-    border-bottom: 1px solid var(--border-color, #333);
-    background: var(--panel-bg, #252526);
+    border-bottom: 1px solid var(--border-color);
+    background: var(--bg-secondary);
 }
 
 .panel-header h3 {
@@ -445,9 +456,9 @@ const canCommit = computed(() => {
     justify-content: space-between;
     align-items: center;
     padding: 8px 12px;
-    background: #5f4f3f;
-    color: #ffa07a;
-    border-bottom: 1px solid #8b4513;
+    background: var(--error-bg, rgba(239, 68, 68, 0.1));
+    color: var(--error-color, #ef4444);
+    border-bottom: 1px solid var(--border-color, #333);
 }
 
 .close-btn {
@@ -467,6 +478,8 @@ const canCommit = computed(() => {
     gap: 16px;
     padding: 24px;
     text-align: center;
+    background: var(--bg-primary);
+    color: var(--text-secondary);
 }
 
 .panel-content {
@@ -474,12 +487,13 @@ const canCommit = computed(() => {
     flex-direction: column;
     flex: 1;
     overflow: hidden;
+    background: var(--bg-primary);
 }
 
 .tabs {
     display: flex;
-    border-bottom: 1px solid var(--border-color, #333);
-    background: var(--panel-bg, #252526);
+    border-bottom: 1px solid var(--border-color);
+    background: var(--bg-secondary);
     padding: 0 12px;
 }
 
@@ -488,7 +502,7 @@ const canCommit = computed(() => {
     padding: 8px;
     border: none;
     background: transparent;
-    color: var(--text-secondary, #999);
+    color: var(--text-secondary);
     cursor: pointer;
     font-size: 11px;
     border-bottom: 2px solid transparent;
@@ -496,12 +510,12 @@ const canCommit = computed(() => {
 }
 
 .tab-btn:hover {
-    color: var(--text-primary, #e0e0e0);
+    color: var(--text-primary);
 }
 
 .tab-btn.active {
-    color: #007acc;
-    border-bottom-color: #007acc;
+    color: var(--accent-color);
+    border-bottom-color: var(--accent-color);
 }
 
 .tab-content {
@@ -511,6 +525,7 @@ const canCommit = computed(() => {
     display: flex;
     flex-direction: column;
     gap: 12px;
+    background: var(--bg-primary);
 }
 
 .quick-actions {
@@ -521,9 +536,9 @@ const canCommit = computed(() => {
 
 .btn {
     padding: 4px 8px;
-    border: 1px solid var(--border-color, #444);
-    background: var(--button-bg, #333);
-    color: var(--text-primary, #e0e0e0);
+    border: 1px solid var(--border-color);
+    background: var(--bg-secondary);
+    color: var(--text-primary);
     border-radius: 3px;
     cursor: pointer;
     font-size: 11px;
@@ -531,7 +546,8 @@ const canCommit = computed(() => {
 }
 
 .btn:hover:not(:disabled) {
-    background: var(--button-hover, #3e3e42);
+    background: var(--bg-hover);
+    border-color: var(--border-hover);
 }
 
 .btn:disabled {
@@ -540,12 +556,15 @@ const canCommit = computed(() => {
 }
 
 .btn-primary {
-    background: #007acc;
-    border-color: #007acc;
+    background: var(--accent-color);
+    border-color: var(--accent-color);
+    color: white;
 }
 
 .btn-primary:hover:not(:disabled) {
-    background: #0099ff;
+    background: var(--accent-hover);
+    border-color: var(--accent-hover);
+    opacity: 0.9;
 }
 
 .btn-sm {
@@ -563,7 +582,7 @@ const canCommit = computed(() => {
     margin: 0;
     font-size: 11px;
     font-weight: 600;
-    color: var(--text-secondary, #999);
+    color: var(--text-secondary);
 }
 
 .file-list {
@@ -579,29 +598,30 @@ const canCommit = computed(() => {
     border-radius: 2px;
     font-family: monospace;
     font-size: 10px;
+    color: var(--text-primary);
 }
 
 .file-item.staged {
-    background: rgba(76, 175, 80, 0.1);
-    color: #4caf50;
+    background: var(--success-bg, rgba(34, 197, 94, 0.1));
+    color: var(--success-color, #22c55e);
 }
 
 .file-item.unstaged {
-    background: rgba(255, 152, 0, 0.1);
-    color: #ff9800;
+    background: var(--warning-bg, rgba(251, 146, 60, 0.1));
+    color: var(--warning-color, #fb923c);
 }
 
 .file-item.untracked {
-    background: rgba(158, 158, 158, 0.1);
-    color: #9e9e9e;
+    background: rgba(156, 163, 175, 0.1);
+    color: var(--text-secondary);
 }
 
 .status-clean {
     padding: 12px;
     text-align: center;
-    background: rgba(76, 175, 80, 0.1);
+    background: var(--success-bg, rgba(34, 197, 94, 0.1));
     border-radius: 3px;
-    color: #4caf50;
+    color: var(--success-color, #22c55e);
 }
 
 .branches-list {
@@ -616,15 +636,16 @@ const canCommit = computed(() => {
     cursor: pointer;
     transition: all 0.2s;
     font-family: monospace;
+    color: var(--text-primary);
 }
 
 .branch-item:hover {
-    background: rgba(0, 122, 204, 0.1);
+    background: rgba(var(--accent-rgb, 10, 132, 255), 0.1);
 }
 
 .branch-item.current {
-    background: rgba(0, 122, 204, 0.2);
-    color: #007acc;
+    background: rgba(var(--accent-rgb, 10, 132, 255), 0.2);
+    color: var(--accent-color);
     font-weight: 600;
 }
 
@@ -636,25 +657,26 @@ const canCommit = computed(() => {
 
 .commit-item {
     padding: 6px;
-    background: rgba(255, 255, 255, 0.05);
+    background: var(--bg-secondary);
     border-radius: 3px;
-    border-left: 2px solid #007acc;
+    border-left: 2px solid var(--accent-color);
 }
 
 .commit-hash {
     font-family: monospace;
     font-size: 10px;
-    color: #007acc;
+    color: var(--accent-color);
 }
 
 .commit-message {
     font-size: 11px;
     margin-top: 2px;
+    color: var(--text-primary);
 }
 
 .commit-meta {
     font-size: 9px;
-    color: var(--text-tertiary, #666);
+    color: var(--text-secondary);
     margin-top: 2px;
 }
 
@@ -668,21 +690,22 @@ const canCommit = computed(() => {
 .settings-group label {
     font-size: 11px;
     font-weight: 600;
-    color: var(--text-secondary, #999);
+    color: var(--text-secondary);
 }
 
 .input {
     padding: 6px;
-    background: var(--input-bg, #333);
-    border: 1px solid var(--border-color, #444);
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
     border-radius: 3px;
-    color: var(--text-primary, #e0e0e0);
+    color: var(--text-primary);
     font-size: 11px;
 }
 
 .input:focus {
     outline: none;
-    border-color: #007acc;
+    border-color: var(--accent-color);
+    box-shadow: 0 0 0 2px rgba(var(--accent-rgb, 10, 132, 255), 0.1);
 }
 
 .modal-overlay {
@@ -691,7 +714,7 @@ const canCommit = computed(() => {
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(0, 0, 0, 0.7);
+    background: rgba(0, 0, 0, 0.6);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -699,27 +722,29 @@ const canCommit = computed(() => {
 }
 
 .modal {
-    background: var(--terminal-bg, #1e1e1e);
-    border: 1px solid var(--border-color, #333);
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
     border-radius: 6px;
     padding: 16px;
     width: 400px;
     max-width: 90%;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
 }
 
 .modal h3 {
     margin: 0 0 12px 0;
     font-size: 14px;
+    color: var(--text-primary);
 }
 
 .commit-textarea {
     width: 100%;
     min-height: 80px;
     padding: 8px;
-    background: var(--input-bg, #333);
-    border: 1px solid var(--border-color, #444);
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
     border-radius: 3px;
-    color: var(--text-primary, #e0e0e0);
+    color: var(--text-primary);
     font-family: monospace;
     font-size: 11px;
     resize: vertical;
@@ -727,7 +752,8 @@ const canCommit = computed(() => {
 
 .commit-textarea:focus {
     outline: none;
-    border-color: #007acc;
+    border-color: var(--accent-color);
+    box-shadow: 0 0 0 2px rgba(var(--accent-rgb, 10, 132, 255), 0.1);
 }
 
 .modal-actions {

@@ -43,9 +43,7 @@
             <span v-if="operation.preview.stats.oldLines > 0">
               {{ operation.preview.stats.oldLines }} → {{ operation.preview.stats.newLines }} 行
             </span>
-            <span v-else>
-              {{ operation.preview.stats.newLines }} 行
-            </span>
+            <span v-else> {{ operation.preview.stats.newLines }} 行 </span>
             <span class="divider">|</span>
             <span>{{ formatSize(operation.preview.stats.size) }}</span>
           </div>
@@ -63,10 +61,7 @@
                 <span class="line-number">{{ change.number }}</span>
                 <span class="line-content">{{ change.line }}</span>
               </div>
-              <div
-                v-if="operation.preview.changes.length > 20"
-                class="diff-more"
-              >
+              <div v-if="operation.preview.changes.length > 20" class="diff-more">
                 ... 还有 {{ operation.preview.changes.length - 20 }} 行变更
               </div>
             </div>
@@ -105,11 +100,7 @@
             </button>
           </p>
           <div v-if="showPendingList" class="pending-list">
-            <div
-              v-for="op in pendingOperations"
-              :key="op.id"
-              class="pending-item"
-            >
+            <div v-for="op in pendingOperations" :key="op.id" class="pending-item">
               {{ op.preview?.title || op.type }}
             </div>
           </div>
@@ -118,9 +109,7 @@
 
       <!-- 操作按钮 -->
       <div class="dialog-actions">
-        <button class="btn btn-danger" @click="handleDeny">
-          ✗ 拒绝
-        </button>
+        <button class="btn btn-danger" @click="handleDeny">✗ 拒绝</button>
 
         <div class="action-right">
           <button
@@ -174,11 +163,15 @@ const showPendingList = ref(false)
 const hasPendingOperations = computed(() => props.pendingOperations.length > 0)
 const pendingCount = computed(() => props.pendingOperations.length)
 
-watch(() => props.operation, (newOp) => {
-  isVisible.value = !!newOp
-}, { immediate: true })
+watch(
+  () => props.operation,
+  newOp => {
+    isVisible.value = !!newOp
+  },
+  { immediate: true }
+)
 
-const getRiskIcon = (level) => {
+const getRiskIcon = level => {
   const icons = {
     safe: '✅',
     low: 'ℹ️',
@@ -189,7 +182,7 @@ const getRiskIcon = (level) => {
   return icons[level] || 'ℹ️'
 }
 
-const formatSize = (bytes) => {
+const formatSize = bytes => {
   if (bytes < 1024) return `${bytes} B`
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
@@ -216,7 +209,7 @@ const handleCancel = () => {
 }
 
 // 键盘快捷键
-const handleKeydown = (e) => {
+const handleKeydown = e => {
   if (!isVisible.value) return
 
   if (e.key === 'Enter' && !e.ctrlKey && !e.metaKey) {
@@ -257,8 +250,12 @@ onUnmounted(() => {
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 .operation-confirm-dialog {

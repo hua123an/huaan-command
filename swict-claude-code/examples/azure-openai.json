@@ -1,0 +1,9 @@
+{
+  "name": "azure-openai",
+  "displayName": "Azure OpenAI Service",
+  "description": "Microsoft Azure OpenAI 服务",
+  "baseUrl": "https://your-resource-name.openai.azure.com/v1",
+  "model": "your-deployment-name",
+  "tags": ["azure", "enterprise"],
+  "notes": "适用于企业环境，已配置合规性要求"
+}

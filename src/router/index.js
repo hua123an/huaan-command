@@ -2,7 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 
 // 路由懒加载优化 - 只保留核心功能
 const Terminal = () => import('../views/Terminal.vue')
-const GitVisualizationDemo = () => import('../views/GitVisualizationDemo.vue')
+const GitPage = () => import('../views/GitPage.vue')
 
 const routes = [
   {
@@ -13,7 +13,7 @@ const routes = [
   {
     path: '/git',
     name: 'GitVisualization',
-    component: GitVisualizationDemo,
+    component: GitPage,
     meta: {
       title: 'Git 可视化',
       icon: '📚'

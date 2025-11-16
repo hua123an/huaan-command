@@ -11,7 +11,7 @@ const sortBy = ref('recent') // 'recent' | 'frequency'
 // 搜索结果
 const searchResults = computed(() => {
   if (!searchQuery.value) {
-    return sortBy.value === 'frequency' 
+    return sortBy.value === 'frequency'
       ? historyStore.getFrequentCommands()
       : historyStore.getRecentCommands()
   }
@@ -19,26 +19,26 @@ const searchResults = computed(() => {
 })
 
 // 使用命令
-const useCommand = (command) => {
+const useCommand = command => {
   emit('use-command', command)
 }
 
 // 切换收藏
-const toggleFavorite = (command) => {
+const toggleFavorite = command => {
   historyStore.toggleFavorite(command)
 }
 
 // 格式化时间
-const formatTime = (timestamp) => {
+const formatTime = timestamp => {
   const date = new Date(timestamp)
   const now = new Date()
   const diff = now - date
-  
+
   if (diff < 60000) return '刚刚'
   if (diff < 3600000) return `${Math.floor(diff / 60000)}分钟前`
   if (diff < 86400000) return `${Math.floor(diff / 3600000)}小时前`
   if (diff < 604800000) return `${Math.floor(diff / 86400000)}天前`
-  
+
   return date.toLocaleDateString()
 }
 </script>
@@ -51,7 +51,7 @@ const formatTime = (timestamp) => {
     </div>
 
     <div class="search-bar">
-      <input 
+      <input
         v-model="searchQuery"
         type="text"
         placeholder="搜索历史命令... (Cmd+R)"
@@ -61,31 +61,26 @@ const formatTime = (timestamp) => {
     </div>
 
     <div class="filter-bar">
-      <button 
-        :class="['filter-btn', { active: sortBy === 'recent' }]"
-        @click="sortBy = 'recent'"
-      >
+      <button :class="['filter-btn', { active: sortBy === 'recent' }]" @click="sortBy = 'recent'">
         ⏱ 最近使用
       </button>
-      <button 
+      <button
         :class="['filter-btn', { active: sortBy === 'frequency' }]"
         @click="sortBy = 'frequency'"
       >
         🔥 使用频率
       </button>
-      <button class="clear-btn" @click="historyStore.clearHistory()">
-        🗑 清空历史
-      </button>
+      <button class="clear-btn" @click="historyStore.clearHistory()">🗑 清空历史</button>
     </div>
 
     <div class="results-list">
-      <div 
+      <div
         v-for="entry in searchResults"
         :key="entry.timestamp + entry.command"
         class="result-item"
       >
         <div class="command-info">
-          <button 
+          <button
             :class="['favorite-btn', { active: historyStore.isFavorite(entry.command) }]"
             title="收藏"
             @click="toggleFavorite(entry.command)"
@@ -99,9 +94,7 @@ const formatTime = (timestamp) => {
           <span v-if="entry.count > 1" class="count">使用 {{ entry.count }} 次</span>
           <span v-if="entry.cwd" class="cwd">{{ entry.cwd }}</span>
         </div>
-        <button class="use-btn" @click="useCommand(entry.command)">
-          使用
-        </button>
+        <button class="use-btn" @click="useCommand(entry.command)">使用</button>
       </div>
 
       <div v-if="searchResults.length === 0" class="empty-state">
@@ -325,4 +318,3 @@ const formatTime = (timestamp) => {
   cursor: pointer;
 }
 </style>
-

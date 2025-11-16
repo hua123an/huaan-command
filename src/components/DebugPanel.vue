@@ -24,7 +24,7 @@ const toggleVisibility = () => {
 
 // 全局快捷键 Ctrl+Shift+L 切换日志面板
 onMounted(() => {
-  const handleKeydown = (e) => {
+  const handleKeydown = e => {
     if (e.ctrlKey && e.shiftKey && e.key === 'L') {
       e.preventDefault()
       toggleVisibility()
@@ -48,44 +48,44 @@ defineExpose({ toggleVisibility })
         <button class="log-btn close" @click="toggleVisibility">✕</button>
       </div>
     </div>
-    
+
     <!-- 过滤器 -->
     <div class="log-filters">
-      <button 
+      <button
         :class="['filter-btn', { active: selectedFilter === 'all' }]"
         @click="selectedFilter = 'all'"
       >
         全部 ({{ logsStore.logs.length }})
       </button>
-      <button 
+      <button
         :class="['filter-btn', 'filter-info', { active: selectedFilter === 'info' }]"
         @click="selectedFilter = 'info'"
       >
         信息
       </button>
-      <button 
+      <button
         :class="['filter-btn', 'filter-success', { active: selectedFilter === 'success' }]"
         @click="selectedFilter = 'success'"
       >
         成功
       </button>
-      <button 
+      <button
         :class="['filter-btn', 'filter-warn', { active: selectedFilter === 'warn' }]"
         @click="selectedFilter = 'warn'"
       >
         警告
       </button>
-      <button 
+      <button
         :class="['filter-btn', 'filter-error', { active: selectedFilter === 'error' }]"
         @click="selectedFilter = 'error'"
       >
         错误
       </button>
     </div>
-    
+
     <div class="log-content">
-      <div 
-        v-for="(log, index) in filteredLogs" 
+      <div
+        v-for="(log, index) in filteredLogs"
         :key="index"
         :class="['log-entry', `log-${log.level}`]"
       >
@@ -98,21 +98,24 @@ defineExpose({ toggleVisibility })
         </span>
         <span class="log-message">{{ log.message }}</span>
       </div>
-      
+
       <div v-if="filteredLogs.length === 0" class="no-logs">
         <span v-if="logsStore.logs.length === 0">暂无日志</span>
         <span v-else>该级别暂无日志</span>
       </div>
     </div>
-    
+
     <div class="log-footer">
-      <span class="log-hint">按 Ctrl+Shift+L 切换面板 | 显示 {{ filteredLogs.length }} / {{ logsStore.logs.length }} 条</span>
+      <span class="log-hint"
+        >按 Ctrl+Shift+L 切换面板 | 显示 {{ filteredLogs.length }} /
+        {{ logsStore.logs.length }} 条</span
+      >
     </div>
   </div>
-  
+
   <!-- 浮动按钮 - 始终显示 -->
-  <button 
-    :class="['log-fab', { active: isVisible }]" 
+  <button
+    :class="['log-fab', { active: isVisible }]"
     :title="isVisible ? '关闭日志面板 (Ctrl+Shift+L)' : '打开日志面板 (Ctrl+Shift+L)'"
     @click="toggleVisibility"
   >
@@ -343,11 +346,11 @@ defineExpose({ toggleVisibility })
   background: var(--text-secondary);
 }
 
-/* 浮动按钮 - 与设置按钮齐平 */
+/* 浮动按钮 - 放在左下角，避免与顶部导航栏冲突 */
 .log-fab {
   position: fixed;
-  top: 10px;
-  right: 66px;
+  bottom: 20px;
+  left: 20px;
   width: 40px;
   height: 40px;
   border-radius: 8px;
@@ -356,7 +359,7 @@ defineExpose({ toggleVisibility })
   color: var(--text-secondary);
   font-size: 18px;
   cursor: pointer;
-  z-index: 10000;
+  z-index: 9999;
   transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   display: flex;
   align-items: center;
@@ -379,7 +382,7 @@ defineExpose({ toggleVisibility })
 .log-fab.active {
   background: linear-gradient(135deg, var(--accent-color) 0%, var(--accent-hover) 100%);
   color: white;
-  box-shadow: 
+  box-shadow:
     0 4px 16px rgba(10, 132, 255, 0.35),
     0 0 0 1px rgba(255, 255, 255, 0.2);
   border-color: rgba(255, 255, 255, 0.25);
@@ -387,10 +390,9 @@ defineExpose({ toggleVisibility })
 
 .log-fab.active:hover {
   background: linear-gradient(135deg, var(--accent-hover) 0%, var(--accent-color) 100%);
-  box-shadow: 
+  box-shadow:
     0 6px 20px rgba(10, 132, 255, 0.4),
     0 0 0 1px rgba(255, 255, 255, 0.3);
   transform: translateY(-1px);
 }
 </style>
-

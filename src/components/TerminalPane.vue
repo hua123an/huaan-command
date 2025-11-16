@@ -25,27 +25,18 @@ const props = defineProps({
   visible: Boolean
 })
 
-
 const terminalStore = useTerminalStore()
 const settingsStore = useSettingsStore()
 const { getTerminalTheme } = useTheme()
 
 // 命令建议功能
-const {
-  suggestions,
-  updateInput,
-  acceptSuggestion,
-  addToHistory,
-  loadHistory
-} = useCommandSuggestion()
+const { suggestions, updateInput, acceptSuggestion, addToHistory, loadHistory } =
+  useCommandSuggestion()
 
 // 目录追踪功能（使用后端接口）
-const {
-  currentDir,
-  updateCurrentDir,
-  startTracking,
-  stopTracking
-} = useDirectoryTracker(props.session.id)
+const { currentDir, updateCurrentDir, startTracking, stopTracking } = useDirectoryTracker(
+  props.session.id
+)
 
 // 自动补全菜单
 const showAutocomplete = ref(false)
@@ -60,18 +51,18 @@ const showAIPanel = ref(false)
 const aiPrompt = ref('')
 const aiResponse = ref('')
 const aiLoading = ref(false)
-const terminalBuffer = ref([])  // 存储终端输出
-const commandHistory = ref([])  // 存储命令历史
+const terminalBuffer = ref([]) // 存储终端输出
+const commandHistory = ref([]) // 存储命令历史
 // AI 模式已移除
-const currentInput = ref('')  // 当前输入缓存
+const currentInput = ref('') // 当前输入缓存
 
 // Warp 模式相关
-const warpMode = ref('terminal')  // 'terminal'
-const isModeSwitching = ref(false)  // 模式切换中的标志
+const warpMode = ref('terminal') // 'terminal'
+const isModeSwitching = ref(false) // 模式切换中的标志
 const currentModel = ref('claude-3-5-sonnet-20241022')
 const showFilePicker = ref(false)
-const selectedFiles = ref([])  // 选中的文件列表
-const conversationHistory = ref([])  // AI对话历史
+const selectedFiles = ref([]) // 选中的文件列表
+const conversationHistory = ref([]) // AI对话历史
 
 let terminal = null
 let fitAddon = null
@@ -84,10 +75,10 @@ const sessionInitialized = (() => {
 
   // 暴露方法用于外部访问
   return {
-    get: (id) => map.get(id),
+    get: id => map.get(id),
     set: (id, value) => map.set(id, value),
-    delete: (id) => map.delete(id),
-    has: (id) => map.has(id)
+    delete: id => map.delete(id),
+    has: id => map.has(id)
   }
 })()
 
@@ -116,7 +107,7 @@ const restoreSessionData = () => {
     terminalBuffer.value = sessionData.terminalBuffer || []
     commandHistory.value = sessionData.commandHistory || []
     currentDir.value = sessionData.currentDir || '~'
-    
+
     // 恢复初始化状态
     if (sessionData.initialized) {
       sessionInitialized.set(props.session.id, sessionData.initialized)
@@ -126,7 +117,7 @@ const restoreSessionData = () => {
     if (sessionData.terminalBuffer && sessionData.terminalBuffer.length > 0) {
       sessionInitialized.set(props.session.id, true)
     }
-    
+
     console.log(`✓ 恢复会话数据 (会话 ${props.session.id}):`, {
       mode: warpMode.value,
       model: currentModel.value,
@@ -182,7 +173,7 @@ onMounted(async () => {
 
   console.log('🟢 注册 onData 回调')
   // 立即注册 onData 回调（在启动终端进程之前）
-  terminal.onData(async (data) => {
+  terminal.onData(async data => {
     console.log('🔵 收到终端输入:', data, '(charCode:', data.charCodeAt(0), ')')
 
     try {
@@ -193,17 +184,19 @@ onMounted(async () => {
       }
 
       // 检测 Ctrl+A（切换 AI 模式）
-      if (data === '\x01') {  // Ctrl+A
+      if (data === '\x01') {
+        // Ctrl+A
         console.log('🔵 检测到 Ctrl+A')
         // AI 模式已移除
-        return  // 不发送到 shell
+        return // 不发送到 shell
       }
 
       // 检测 Ctrl+I（手动初始化终端）
-      if (data.charCodeAt(0) === 9) {  // Ctrl+I (ASCII 9)
+      if (data.charCodeAt(0) === 9) {
+        // Ctrl+I (ASCII 9)
         console.log('🔵 检测到 Ctrl+I，手动初始化终端')
         manualInitializeTerminal()
-        return  // 不发送到 shell
+        return // 不发送到 shell
       }
 
       // 如果在 AI 模式（Warp 模式），完全接管输入
@@ -214,12 +207,12 @@ onMounted(async () => {
           // 退格键
           if (currentInput.value.length > 0) {
             currentInput.value = currentInput.value.slice(0, -1)
-            terminal.write('\b \b')  // 终端显示退格
+            terminal.write('\b \b') // 终端显示退格
           }
         } else if (data !== '\r') {
           // 所有非回车的字符（包括中文）
           currentInput.value += data
-          terminal.write(data)  // 终端显示输入
+          terminal.write(data) // 终端显示输入
         }
 
         // 检测回车键
@@ -231,11 +224,11 @@ onMounted(async () => {
             terminal.write('\r\n')
           }
           currentInput.value = ''
-          updateInput('')  // 清空建议
+          updateInput('') // 清空建议
           return
         }
 
-        return  // AI 模式下不发送到 shell
+        return // AI 模式下不发送到 shell
       }
 
       // 终端模式：直接透传所有输入到 shell，不做任何拦截
@@ -274,7 +267,7 @@ onMounted(async () => {
     const firstOutput = true
 
     // 监听终端输出
-    unlisten = await listen(`terminal-output-${props.session.id}`, (event) => {
+    unlisten = await listen(`terminal-output-${props.session.id}`, event => {
       terminal.write(event.payload)
 
       // 保存输出到 buffer（限制最多10000行）
@@ -287,7 +280,6 @@ onMounted(async () => {
 
     // 由于设置了 PS1 环境变量，shell 会自动显示提示符，无需手动初始化
     // 移除自动初始化逻辑，避免显示两次提示符
-
   } catch (error) {
     terminal.write(`\x1b[31m错误: ${error}\x1b[0m\r\n`)
   }
@@ -310,134 +302,139 @@ onMounted(async () => {
   })
 
   // 监听主题变化
-  watch(() => settingsStore.settings.theme, () => {
-    if (terminal) {
-      terminal.options.theme = getTerminalTheme()
+  watch(
+    () => settingsStore.settings.theme,
+    () => {
+      if (terminal) {
+        terminal.options.theme = getTerminalTheme()
+      }
     }
-  })
+  )
 
   // 监听 shell 类型变化，重新初始化终端
-  watch(() => settingsStore.settings.shell, async (newShell, oldShell) => {
-    if (oldShell && newShell !== oldShell) {
-      console.log(`🔄 Shell 类型从 ${oldShell} 变为 ${newShell}，重新初始化终端`)
+  watch(
+    () => settingsStore.settings.shell,
+    async (newShell, oldShell) => {
+      if (oldShell && newShell !== oldShell) {
+        console.log(`🔄 Shell 类型从 ${oldShell} 变为 ${newShell}，重新初始化终端`)
 
-      // 保存当前会话数据
-      saveSessionData()
+        // 保存当前会话数据
+        saveSessionData()
 
-      // 重置初始化状态，以便重新初始化
-      sessionInitialized.delete(props.session.id)
+        // 重置初始化状态，以便重新初始化
+        sessionInitialized.delete(props.session.id)
 
-      // 关闭旧终端
-      if (unlisten) unlisten()
-      if (terminal) terminal.dispose()
+        // 关闭旧终端
+        if (unlisten) unlisten()
+        if (terminal) terminal.dispose()
 
-      try {
-        await invoke('close_terminal', { sessionId: props.session.id })
-        console.log('✓ 已关闭旧终端会话')
-      } catch (err) {
-        console.error('关闭终端失败:', err)
-      }
+        try {
+          await invoke('close_terminal', { sessionId: props.session.id })
+          console.log('✓ 已关闭旧终端会话')
+        } catch (err) {
+          console.error('关闭终端失败:', err)
+        }
 
-      // 重新初始化终端（延迟一下确保旧进程完全关闭）
-      setTimeout(async () => {
-        // 重新创建终端
-        terminal = new Terminal({
-          cursorBlink: true,
-          fontSize: 14,
-          fontFamily: 'SF Mono, Menlo, Monaco, Courier New, monospace',
-          theme: getTerminalTheme(),
-          allowTransparency: true,
-          lineHeight: 1.2,
-          letterSpacing: 0,
-          scrollback: 10000
-        })
+        // 重新初始化终端（延迟一下确保旧进程完全关闭）
+        setTimeout(async () => {
+          // 重新创建终端
+          terminal = new Terminal({
+            cursorBlink: true,
+            fontSize: 14,
+            fontFamily: 'SF Mono, Menlo, Monaco, Courier New, monospace',
+            theme: getTerminalTheme(),
+            allowTransparency: true,
+            lineHeight: 1.2,
+            letterSpacing: 0,
+            scrollback: 10000
+          })
 
-        fitAddon = new FitAddon()
-        terminal.loadAddon(fitAddon)
-        terminal.loadAddon(new WebLinksAddon())
+          fitAddon = new FitAddon()
+          terminal.loadAddon(fitAddon)
+          terminal.loadAddon(new WebLinksAddon())
 
-        terminal.open(terminalRef.value)
-        fitAddon.fit()
-        terminal.focus()
+          terminal.open(terminalRef.value)
+          fitAddon.fit()
+          terminal.focus()
 
-        // 重新注册 onData 回调
-        terminal.onData(async (data) => {
-          try {
-            if (isModeSwitching.value) return
+          // 重新注册 onData 回调
+          terminal.onData(async data => {
+            try {
+              if (isModeSwitching.value) return
 
-            if (data === '\x01') {
-              // AI 模式已移除
-              return
-            }
-
-            if (warpMode.value === 'ai') {
-              if (data === '\x7f' || data === '\b') {
-                if (currentInput.value.length > 0) {
-                  currentInput.value = currentInput.value.slice(0, -1)
-                  terminal.write('\b \b')
-                }
-              } else if (data !== '\r') {
-                currentInput.value += data
-                terminal.write(data)
-              }
-
-              if (data === '\r') {
-                if (currentInput.value.trim()) {
-                  terminal.write('\r\n')
-                  // AI 模式下不再处理命令，只显示工具选择界面
-                } else {
-                  terminal.write('\r\n')
-                }
-                currentInput.value = ''
-                updateInput('')
+              if (data === '\x01') {
+                // AI 模式已移除
                 return
               }
 
-              return
-            }
+              if (warpMode.value === 'ai') {
+                if (data === '\x7f' || data === '\b') {
+                  if (currentInput.value.length > 0) {
+                    currentInput.value = currentInput.value.slice(0, -1)
+                    terminal.write('\b \b')
+                  }
+                } else if (data !== '\r') {
+                  currentInput.value += data
+                  terminal.write(data)
+                }
 
-            await invoke('write_terminal', {
+                if (data === '\r') {
+                  if (currentInput.value.trim()) {
+                    terminal.write('\r\n')
+                    // AI 模式下不再处理命令，只显示工具选择界面
+                  } else {
+                    terminal.write('\r\n')
+                  }
+                  currentInput.value = ''
+                  updateInput('')
+                  return
+                }
+
+                return
+              }
+
+              await invoke('write_terminal', {
+                sessionId: props.session.id,
+                data
+              })
+            } catch (error) {
+              console.error('❌ 写入终端失败:', error)
+            }
+          })
+
+          // 启动终端进程
+          try {
+            await invoke('start_terminal', {
               sessionId: props.session.id,
-              data
+              shellType: settingsStore.settings.shell
             })
+            console.log('✓ 已重新启动终端会话')
+
+            // 首次输出标志（用于清除初始提示符）
+            const firstOutput = true
+
+            // 重新监听输出
+            unlisten = await listen(`terminal-output-${props.session.id}`, event => {
+              terminal.write(event.payload)
+
+              const lines = event.payload.split('\n')
+              terminalBuffer.value.push(...lines)
+              if (terminalBuffer.value.length > 10000) {
+                terminalBuffer.value = terminalBuffer.value.slice(-10000)
+              }
+            })
+
+            terminal.write(`\x1b[32m✓ 已切换到 ${newShell}\x1b[0m\r\n`)
+
+            // shell 会自动显示提示符，无需手动初始化
+            sessionInitialized.set(props.session.id, true)
           } catch (error) {
-            console.error('❌ 写入终端失败:', error)
+            terminal.write(`\x1b[31m错误: ${error}\x1b[0m\r\n`)
           }
-        })
-
-        // 启动终端进程
-        try {
-          await invoke('start_terminal', {
-            sessionId: props.session.id,
-            shellType: settingsStore.settings.shell
-          })
-          console.log('✓ 已重新启动终端会话')
-
-          // 首次输出标志（用于清除初始提示符）
-          const firstOutput = true
-
-          // 重新监听输出
-          unlisten = await listen(`terminal-output-${props.session.id}`, (event) => {
-            terminal.write(event.payload)
-
-            const lines = event.payload.split('\n')
-            terminalBuffer.value.push(...lines)
-            if (terminalBuffer.value.length > 10000) {
-              terminalBuffer.value = terminalBuffer.value.slice(-10000)
-            }
-          })
-
-          terminal.write(`\x1b[32m✓ 已切换到 ${newShell}\x1b[0m\r\n`)
-
-          // shell 会自动显示提示符，无需手动初始化
-          sessionInitialized.set(props.session.id, true)
-
-        } catch (error) {
-          terminal.write(`\x1b[31m错误: ${error}\x1b[0m\r\n`)
-        }
-      }, 200)
+        }, 200)
+      }
     }
-  })
+  )
 
   // 监听系统主题变化（当主题为auto时）
   const darkModeQuery = window.matchMedia('(prefers-color-scheme: dark)')
@@ -455,20 +452,22 @@ onMounted(async () => {
 
 // 获取终端文本（去除 ANSI 转义符）
 const getTerminalText = () => {
-  return terminalBuffer.value
-    .join('\n')
-    // eslint-disable-next-line no-control-regex
-    .replace(/\u001B\[[0-9;]*[mGKHf]/g, '') // 移除 ANSI 转义序列
-    .trim()
+  return (
+    terminalBuffer.value
+      .join('\n')
+      // eslint-disable-next-line no-control-regex
+      .replace(/\u001B\[[0-9;]*[mGKHf]/g, '') // 移除 ANSI 转义序列
+      .trim()
+  )
 }
 
 // AI 功能：生成命令
 const aiGenerateCommand = async () => {
   if (!aiPrompt.value.trim()) return
-  
+
   aiLoading.value = true
   aiResponse.value = ''
-  
+
   // AI 功能已移除，直接返回
   aiResponse.value = '❌ AI 功能已移除'
   aiLoading.value = false
@@ -481,11 +480,11 @@ const aiAnalyzeOutput = async () => {
     aiResponse.value = '❌ 终端输出为空'
     return
   }
-  
+
   aiLoading.value = true
   aiResponse.value = ''
   aiPrompt.value = '分析终端输出'
-  
+
   try {
     // AI 功能已移除，直接返回
     aiResponse.value = '❌ AI 功能已移除'
@@ -500,7 +499,7 @@ const aiAnalyzeOutput = async () => {
 const aiDiagnoseError = async () => {
   aiLoading.value = true
   aiResponse.value = ''
-  
+
   // AI 功能已移除，直接返回
   aiResponse.value = '❌ AI 功能已移除'
   aiLoading.value = false
@@ -514,7 +513,7 @@ const useGeneratedCommand = () => {
       .replace(/^```[\s\S]*?\n/, '')
       .replace(/```$/, '')
       .trim()
-    
+
     // 写入终端
     terminal.write(command)
   }
@@ -529,7 +528,7 @@ const clearAI = () => {
 // AI 模式已移除
 
 // AI 命令生成处理（从 AI 模式接收命令）
-const handleAICommandGenerated = async (command) => {
+const handleAICommandGenerated = async command => {
   // 直接向终端输入命令并执行
   try {
     await invoke('write_terminal', {
@@ -541,17 +540,15 @@ const handleAICommandGenerated = async (command) => {
   }
 }
 
-
-
 // 格式化单行 Markdown（用于流式输出）
-const formatMarkdownLine = (line) => {
+const formatMarkdownLine = line => {
   let formatted = line
-  
+
   // 检测并处理代码块标记（保持原样，后续处理）
   if (formatted.match(/^```/)) {
     return `\x1b[90m${formatted}\x1b[0m`
   }
-  
+
   // 处理标题
   if (formatted.match(/^### /)) {
     formatted = formatted.replace(/^### (.+)$/, '\x1b[1m\x1b[35m▸ $1\x1b[0m')
@@ -560,111 +557,110 @@ const formatMarkdownLine = (line) => {
   } else if (formatted.match(/^# /)) {
     formatted = formatted.replace(/^# (.+)$/, '\x1b[1m\x1b[32m● $1\x1b[0m')
   }
-  
+
   // 处理无序列表
   else if (formatted.match(/^(\s*)[-*+] /)) {
     formatted = formatted.replace(/^(\s*)[-*+] (.+)$/, '$1\x1b[36m●\x1b[0m $2')
   }
-  
+
   // 处理有序列表
   else if (formatted.match(/^(\s*)(\d+)\. /)) {
     formatted = formatted.replace(/^(\s*)(\d+)\. (.+)$/, '$1\x1b[36m$2.\x1b[0m $3')
   }
-  
+
   // 处理行内代码
   formatted = formatted.replace(/`([^`]+)`/g, '\x1b[43m\x1b[30m $1 \x1b[0m')
-  
+
   // 处理粗体
   formatted = formatted.replace(/\*\*([^*]+)\*\*/g, '\x1b[1m$1\x1b[0m')
-  
+
   return formatted
 }
 
 // 格式化终端输出（处理换行和特殊字符）- 增强版
-const formatTerminalOutput = (text) => {
+const formatTerminalOutput = text => {
   // 先处理代码块（避免被其他规则干扰）
   let formatted = text.replace(/```(\w*)\n([\s\S]*?)```/g, (match, lang, code) => {
     const langLabel = lang ? `[${lang}]` : '[code]'
     return `\n\x1b[90m╭─ ${langLabel} ────────────────\x1b[0m\n\x1b[33m${code.trim()}\x1b[0m\n\x1b[90m╰────────────────────────────\x1b[0m\n`
   })
-  
+
   // 处理行内代码
   formatted = formatted.replace(/`([^`]+)`/g, '\x1b[43m\x1b[30m $1 \x1b[0m')
-  
+
   // 处理标题
   formatted = formatted.replace(/^### (.+)$/gm, '\x1b[1m\x1b[35m▸ $1\x1b[0m')
   formatted = formatted.replace(/^## (.+)$/gm, '\x1b[1m\x1b[36m▶ $1\x1b[0m')
   formatted = formatted.replace(/^# (.+)$/gm, '\x1b[1m\x1b[32m● $1\x1b[0m')
-  
+
   // 处理粗体
   formatted = formatted.replace(/\*\*([^*]+)\*\*/g, '\x1b[1m$1\x1b[0m')
-  
+
   // 处理无序列表（支持多级缩进）
   formatted = formatted.replace(/^(\s*)[-*+] (.+)$/gm, (match, indent, text) => {
     return `${indent}\x1b[36m●\x1b[0m ${text}`
   })
-  
+
   // 处理有序列表
   formatted = formatted.replace(/^(\s*)(\d+)\. (.+)$/gm, (match, indent, num, text) => {
     return `${indent}\x1b[36m${num}.\x1b[0m ${text}`
   })
-  
+
   // 最后将所有 \n 替换为 \r\n（终端换行）
   formatted = formatted.replace(/\n/g, '\r\n')
-  
+
   return formatted
 }
 
-
-
-
-
 // 格式化 AI 响应（支持 Markdown）
-const formatResponse = (text) => {
+const formatResponse = text => {
   if (!text) return ''
-  
-  let html = text
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-  
+
+  let html = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+
   // 代码块
   html = html.replace(/```(\w+)?\n([\s\S]*?)```/g, (match, lang, code) => {
     return `<pre class="code-block"><code>${code.trim()}</code></pre>`
   })
-  
+
   // 行内代码
   html = html.replace(/`([^`]+)`/g, '<code class="inline-code">$1</code>')
-  
+
   // 粗体
   html = html.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
-  
+
   // 标题
   html = html.replace(/^##\s+(.+)$/gm, '<h3>$1</h3>')
   html = html.replace(/^###\s+(.+)$/gm, '<h4>$1</h4>')
-  
+
   // 列表
   html = html.replace(/^-\s+(.+)$/gm, '<li>$1</li>')
   html = html.replace(/(<li>.*<\/li>)/s, '<ul>$1</ul>')
-  
+
   // 换行
   html = html.replace(/\n/g, '<br>')
-  
+
   return html
 }
 
-watch(() => props.visible, (newVisible) => {
-  if (newVisible && fitAddon) {
-    setTimeout(() => fitAddon.fit(), 10)
+watch(
+  () => props.visible,
+  newVisible => {
+    if (newVisible && fitAddon) {
+      setTimeout(() => fitAddon.fit(), 10)
+    }
   }
-})
+)
 
 // 监听主题变化
-watch(() => settingsStore.settings.theme, () => {
-  if (terminal) {
-    terminal.options.theme = getTerminalTheme()
+watch(
+  () => settingsStore.settings.theme,
+  () => {
+    if (terminal) {
+      terminal.options.theme = getTerminalTheme()
+    }
   }
-})
+)
 
 // 监听系统主题变化（当主题为auto时）
 const darkModeQuery = window.matchMedia('(prefers-color-scheme: dark)')
@@ -675,33 +671,38 @@ const handleSystemThemeChange = () => {
 }
 darkModeQuery.addEventListener('change', handleSystemThemeChange)
 
-
-
 // 监听数据变化，自动保存
-watch([warpMode, currentModel, conversationHistory, terminalBuffer, commandHistory, currentDir], () => {
-  saveSessionData()
-}, { deep: true })
+watch(
+  [warpMode, currentModel, conversationHistory, terminalBuffer, commandHistory, currentDir],
+  () => {
+    saveSessionData()
+  },
+  { deep: true }
+)
 
 // 监听会话切换，保存当前会话数据
-watch(() => props.session?.id, (newId, oldId) => {
-  if (oldId) {
-    // 切换前保存旧会话
-    saveSessionData()
+watch(
+  () => props.session?.id,
+  (newId, oldId) => {
+    if (oldId) {
+      // 切换前保存旧会话
+      saveSessionData()
+    }
+    if (newId) {
+      // 切换后恢复新会话
+      restoreSessionData()
+    }
   }
-  if (newId) {
-    // 切换后恢复新会话
-    restoreSessionData()
-  }
-})
+)
 
 // Warp 模式处理
-const handleModeUpdate = async (mode) => {
+const handleModeUpdate = async mode => {
   // 🔒 锁定输入，防止切换期间的输入泄露
   isModeSwitching.value = true
 
   // 清空输入缓存，防止输入泄露
   currentInput.value = ''
-  updateInput('')  // 清空建议
+  updateInput('') // 清空建议
 
   // 先更新模式状态（必须在发送任何内容到终端之前）
   warpMode.value = mode
@@ -729,25 +730,25 @@ const handleModeUpdate = async (mode) => {
     terminal.write('\r\n\x1b[32m🤖 AI 模式已启用\x1b[0m\r\n')
     terminal.write('\x1b[36m💡 输入命令描述，AI 将为您生成相应的命令\x1b[0m\r\n')
     terminal.write('\x1b[90m按 Ctrl+C 退出 AI 模式\x1b[0m\r\n')
-    terminal.write('\x1b[35m❯\x1b[0m ')  // 显示AI提示符
+    terminal.write('\x1b[35m❯\x1b[0m ') // 显示AI提示符
     terminal.scrollToBottom()
   } else {
     // 显示退出AI模式信息
     terminal.write('\r\n\x1b[33m🔧 已退出 AI 模式\x1b[0m\r\n')
     terminal.write('\r\n')
   }
-  
+
   // 额外等待100ms确保所有提示信息都已显示
   await new Promise(resolve => setTimeout(resolve, 100))
-  
+
   // 🔓 解锁输入
   isModeSwitching.value = false
-  
+
   // 立即保存模式切换
   saveSessionData()
 }
 
-const handleModelUpdate = (model) => {
+const handleModelUpdate = model => {
   currentModel.value = model
   // AI 功能已移除
   terminal.write(`\r\n\x1b[36m✓ 已切换模型: ${model}\x1b[0m\r\n`)
@@ -758,20 +759,20 @@ const handleMentionFile = () => {
 }
 
 // 处理文件选择
-const handleFileSelect = (file) => {
+const handleFileSelect = file => {
   selectedFiles.value.push(file)
-  
+
   // 如果选择的是目录，更新 currentDir
   if (file.isDir) {
     currentDir.value = file.path
   }
-  
+
   const icon = file.isDir ? '📁' : '📄'
   const type = file.isDir ? '目录' : '文件'
-  
+
   terminal.write(`\r\n\x1b[36m${icon} 已选择${type}: ${file.name}\x1b[0m\r\n`)
   terminal.write(`\x1b[90m路径: ${file.path}\x1b[0m\r\n`)
-  
+
   // 如果在 AI 模式，可以直接提示用户可以使用这个文件/目录
   if (warpMode.value === 'ai') {
     terminal.write(`\r\n\x1b[90m提示: 现在可以在提示中引用此${type}\x1b[0m\r\n`)
@@ -797,11 +798,14 @@ const clearTerminal = () => {
 const copyContent = () => {
   const content = getTerminalText()
   if (content) {
-    navigator.clipboard.writeText(content).then(() => {
-      terminal.write('\r\n\x1b[32m✓ 内容已复制到剪贴板\x1b[0m\r\n')
-    }).catch(() => {
-      terminal.write('\r\n\x1b[31m❌ 复制失败\x1b[0m\r\n')
-    })
+    navigator.clipboard
+      .writeText(content)
+      .then(() => {
+        terminal.write('\r\n\x1b[32m✓ 内容已复制到剪贴板\x1b[0m\r\n')
+      })
+      .catch(() => {
+        terminal.write('\r\n\x1b[31m❌ 复制失败\x1b[0m\r\n')
+      })
   } else {
     terminal.write('\r\n\x1b[33m⚠️ 没有内容可复制\x1b[0m\r\n')
   }
@@ -827,7 +831,7 @@ const downloadContent = () => {
 }
 
 // 处理自动补全选择
-const handleAutocompleteSelect = async (selectedCommand) => {
+const handleAutocompleteSelect = async selectedCommand => {
   showAutocomplete.value = false
 
   // 清除当前输入
@@ -858,7 +862,7 @@ const handleBottomInputChange = () => {
 }
 
 // 处理底部输入框按键
-const handleBottomInputKeydown = async (event) => {
+const handleBottomInputKeydown = async event => {
   // Enter键：执行命令
   if (event.key === 'Enter') {
     event.preventDefault()
@@ -1018,7 +1022,7 @@ onDeactivated(() => {
 const commandSuggestion = ref('')
 
 // 处理 Git 命令执行
-const handleGitCommand = (command) => {
+const handleGitCommand = command => {
   if (terminal && command) {
     // 清除当前输入
     if (currentInput.value) {
@@ -1046,7 +1050,7 @@ const handleGitCommand = (command) => {
 }
 
 // 应用命令建议
-const applyGitSuggestion = (suggestion) => {
+const applyGitSuggestion = suggestion => {
   bottomInput.value = suggestion
   handleBottomInputChange()
   // 聚焦到输入框
@@ -1058,14 +1062,14 @@ const applyGitSuggestion = (suggestion) => {
 onUnmounted(async () => {
   // 保存会话数据
   saveSessionData()
-  
+
   // 清理系统主题监听器
   if (window._terminalDarkModeQuery && window._terminalThemeHandler) {
     window._terminalDarkModeQuery.removeEventListener('change', window._terminalThemeHandler)
     delete window._terminalDarkModeQuery
     delete window._terminalThemeHandler
   }
-  
+
   if (unlisten) {
     unlisten()
   }
@@ -1083,50 +1087,22 @@ onUnmounted(async () => {
 <template>
   <div :class="['terminal-container', { visible }]">
     <!-- 上部：Git状态栏 -->
-    <GitStatusBar
-      :current-dir="currentDir"
-      @execute-command="handleGitCommand"
-    />
+    <GitStatusBar :current-dir="currentDir" @execute-command="handleGitCommand" />
 
     <!-- 中部：终端显示区域 -->
-    <div
-      ref="terminalRef"
-      class="terminal-pane"
-      @click="focusTerminal"
-    />
+    <div ref="terminalRef" class="terminal-pane" @click="focusTerminal" />
 
     <!-- 下部：Warp模式栏 -->
-    <WarpModeBar
-      :mode="warpMode"
-      :current-model="currentModel"
-      :session-id="session.id"
-      @update:mode="handleModeUpdate"
-      @update:current-model="handleModelUpdate"
-      @mention-file="handleMentionFile"
-    />
-
-    
-    
-    
+    <WarpModeBar :mode="warpMode" :current-model="currentModel" :session-id="session.id" @update:mode="handleModeUpdate"
+      @update:current-model="handleModelUpdate" @mention-file="handleMentionFile" />
 
     <!-- 文件选择器模态框 -->
-    <FilePickerModal
-      :show="showFilePicker"
-      :current-dir="currentDir"
-      :session-id="session.id"
-      @close="showFilePicker = false"
-      @select="handleFileSelect"
-    />
+    <FilePickerModal :show="showFilePicker" :current-dir="currentDir" :session-id="session.id"
+      @close="showFilePicker = false" @select="handleFileSelect" />
 
     <!-- 自动补全菜单 -->
-    <AutocompleteMenu
-      ref="autocompleteMenuRef"
-      :visible="showAutocomplete"
-      :suggestions="suggestions"
-      :position="autocompletePosition"
-      @select="handleAutocompleteSelect"
-      @close="showAutocomplete = false"
-    />
+    <AutocompleteMenu ref="autocompleteMenuRef" :visible="showAutocomplete" :suggestions="suggestions"
+      :position="autocompletePosition" @select="handleAutocompleteSelect" @close="showAutocomplete = false" />
   </div>
 </template>
 
@@ -1142,7 +1118,7 @@ onUnmounted(async () => {
   transition: opacity 0.15s ease;
   display: flex;
   flex-direction: column;
-  background: #ffffff;
+  background: var(--bg-primary);
 }
 
 .terminal-container.visible {
@@ -1158,8 +1134,8 @@ onUnmounted(async () => {
   font-family: 'SF Mono', Menlo, Monaco, 'Courier New', monospace;
   font-size: 13px;
   line-height: 1.4;
-  color: #1a1a1a;
-  background: #ffffff;
+  color: var(--text-primary);
+  background: var(--bg-primary);
 }
 
 /* AI 模式指示器 */
@@ -1167,11 +1143,11 @@ onUnmounted(async () => {
   position: absolute;
   top: 16px;
   right: 16px;
-  background: linear-gradient(135deg, rgba(32, 32, 34, 0.95) 0%, rgba(28, 28, 30, 0.95) 100%);
+  background: var(--bg-secondary);
   border-radius: 12px;
   padding: 12px 16px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  border: 1px solid var(--border-color);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   z-index: 50;
@@ -1184,6 +1160,7 @@ onUnmounted(async () => {
     opacity: 0;
     transform: translateX(20px);
   }
+
   to {
     opacity: 1;
     transform: translateX(0);
@@ -1207,16 +1184,22 @@ onUnmounted(async () => {
   animation: pulse 2s ease-in-out infinite;
 }
 
-
 @keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.7; }
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.7;
+  }
 }
 
 .mode-hint {
   margin-top: 8px;
   font-size: 11px;
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--text-secondary);
   line-height: 1.4;
 }
 
@@ -1257,9 +1240,12 @@ onUnmounted(async () => {
 }
 
 @keyframes aiPulse {
-  0%, 100% {
+
+  0%,
+  100% {
     box-shadow: 0 4px 16px rgba(50, 215, 75, 0.5);
   }
+
   50% {
     box-shadow: 0 6px 24px rgba(50, 215, 75, 0.7);
   }
@@ -1272,11 +1258,10 @@ onUnmounted(async () => {
   right: 24px;
   width: 420px;
   max-height: 500px;
-  background: linear-gradient(135deg, rgba(32, 32, 34, 0.98) 0%, rgba(28, 28, 30, 0.98) 100%);
+  background: var(--bg-secondary);
   border-radius: 16px;
-  box-shadow: 
-    0 24px 64px rgba(0, 0, 0, 0.6),
-    0 0 0 1px rgba(255, 255, 255, 0.15);
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.2);
+  border: 1px solid var(--border-color);
   backdrop-filter: blur(40px);
   -webkit-backdrop-filter: blur(40px);
   z-index: 99;
@@ -1290,6 +1275,7 @@ onUnmounted(async () => {
     opacity: 0;
     transform: translateY(20px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -1301,20 +1287,20 @@ onUnmounted(async () => {
   justify-content: space-between;
   align-items: center;
   padding: 16px 20px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  border-bottom: 1px solid var(--border-color);
 }
 
 .ai-title {
   font-size: 15px;
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.95);
+  color: var(--text-primary);
 }
 
 .ai-close {
   width: 28px;
   height: 28px;
   border: none;
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--bg-hover);
   border-radius: 6px;
   color: var(--text-secondary);
   font-size: 16px;
@@ -1323,24 +1309,24 @@ onUnmounted(async () => {
 }
 
 .ai-close:hover {
-  background: rgba(255, 255, 255, 0.15);
-  color: rgba(255, 255, 255, 0.95);
+  background: var(--border-color);
+  color: var(--text-primary);
 }
 
 .ai-quick-actions {
   display: flex;
   gap: 8px;
   padding: 16px 20px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  border-bottom: 1px solid var(--border-color);
 }
 
 .quick-action-btn {
   flex: 1;
   padding: 8px 12px;
-  background: rgba(10, 132, 255, 0.1);
-  border: 1px solid rgba(10, 132, 255, 0.2);
+  background: var(--bg-hover);
+  border: 1px solid var(--border-color);
   border-radius: 8px;
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--text-primary);
   font-size: 12px;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -1348,8 +1334,8 @@ onUnmounted(async () => {
 }
 
 .quick-action-btn:hover:not(:disabled) {
-  background: rgba(10, 132, 255, 0.2);
-  border-color: rgba(10, 132, 255, 0.4);
+  background: var(--bg-tertiary);
+  border-color: var(--accent-color);
   transform: translateY(-1px);
 }
 
@@ -1389,7 +1375,7 @@ onUnmounted(async () => {
 
 .ai-generate-btn {
   padding: 10px 16px;
-  background: linear-gradient(135deg, #0a84ff 0%, #0066cc 100%);
+  background: var(--accent-color);
   border: none;
   border-radius: 10px;
   color: white;
@@ -1402,7 +1388,7 @@ onUnmounted(async () => {
 
 .ai-generate-btn:hover:not(:disabled) {
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(10, 132, 255, 0.4);
+  opacity: 0.85;
 }
 
 .ai-generate-btn:disabled {
@@ -1431,8 +1417,8 @@ onUnmounted(async () => {
 
 .use-command-btn {
   padding: 4px 10px;
-  background: rgba(50, 215, 75, 0.15);
-  border: 1px solid rgba(50, 215, 75, 0.3);
+  background: var(--bg-hover);
+  border: 1px solid var(--border-color);
   border-radius: 6px;
   color: var(--success-color);
   font-size: 11px;
@@ -1442,15 +1428,15 @@ onUnmounted(async () => {
 }
 
 .use-command-btn:hover {
-  background: rgba(50, 215, 75, 0.25);
-  border-color: rgba(50, 215, 75, 0.5);
+  background: var(--bg-tertiary);
+  border-color: var(--accent-color);
 }
 
 .ai-response {
   padding: 12px;
-  background: rgba(0, 0, 0, 0.3);
+  background: var(--bg-tertiary);
   border-radius: 8px;
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--text-primary);
   font-size: 13px;
   line-height: 1.6;
   word-break: break-word;
@@ -1470,20 +1456,22 @@ onUnmounted(async () => {
 .loading-spinner {
   width: 32px;
   height: 32px;
-  border: 3px solid rgba(255, 255, 255, 0.1);
+  border: 3px solid var(--border-color);
   border-top-color: var(--accent-color);
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .ai-placeholder {
   padding: 40px 20px;
   text-align: center;
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--text-secondary);
   font-size: 13px;
   line-height: 1.6;
 }
@@ -1497,13 +1485,13 @@ onUnmounted(async () => {
 }
 
 .ai-response-section::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.2);
+  background: var(--border-color);
   border-radius: 3px;
 }
 
 /* Markdown 样式 */
 :deep(.code-block) {
-  background: rgba(0, 0, 0, 0.5);
+  background: var(--bg-tertiary);
   padding: 12px;
   border-radius: 6px;
   margin: 8px 0;
@@ -1513,25 +1501,25 @@ onUnmounted(async () => {
 }
 
 :deep(.inline-code) {
-  background: rgba(0, 0, 0, 0.4);
+  background: var(--bg-hover);
   padding: 2px 6px;
   border-radius: 4px;
   font-family: 'SF Mono', Menlo, Monaco, monospace;
   font-size: 12px;
-  color: #64d2ff;
+  color: var(--accent-color);
 }
 
 :deep(h3) {
   font-size: 14px;
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.95);
+  color: var(--text-primary);
   margin: 12px 0 8px 0;
 }
 
 :deep(h4) {
   font-size: 13px;
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--text-primary);
   margin: 10px 0 6px 0;
 }
 
@@ -1546,38 +1534,37 @@ onUnmounted(async () => {
 
 :deep(strong) {
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.98);
+  color: var(--text-primary);
 }
 
 :deep(.xterm) {
   height: 100%;
   padding: 0;
-  background: #ffffff;
+  background: var(--bg-primary);
 }
 
 :deep(.xterm-viewport) {
-  background: #ffffff !important;
+  background: var(--bg-primary) !important;
 }
 
 :deep(.xterm-screen) {
   padding-right: 8px;
-  background: #ffffff;
+  background: var(--bg-primary);
 }
 
 :deep(.xterm-rows) {
   font-family: 'SF Mono', Menlo, Monaco, 'Courier New', monospace !important;
   font-size: 13px !important;
   line-height: 1.4 !important;
-  color: #1a1a1a !important;
+  color: var(--text-primary) !important;
 }
 
 :deep(.xterm-row) {
-  background: #ffffff !important;
+  background: var(--bg-primary) !important;
 }
 
 :deep(.xterm-cursor) {
-  background: #1a1a1a !important;
-  color: #ffffff !important;
+  background: var(--text-primary) !important;
+  color: var(--bg-primary) !important;
 }
 </style>
-

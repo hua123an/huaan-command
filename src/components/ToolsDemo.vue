@@ -36,10 +36,7 @@
           <span v-if="tool.needsApproval" class="badge">需批准</span>
         </div>
         <p class="tool-description">{{ tool.description }}</p>
-        <button
-          :disabled="executingTool === tool.name"
-          @click="executeToolDemo(tool)"
-        >
+        <button :disabled="executingTool === tool.name" @click="executeToolDemo(tool)">
           {{ executingTool === tool.name ? '执行中...' : '执行' }}
         </button>
       </div>
@@ -55,9 +52,7 @@
         <span class="duration">{{ lastResult.duration }}ms</span>
       </div>
       <div class="result-details">
-        <div class="detail-row">
-          <strong>工具:</strong> {{ lastResult.tool }}
-        </div>
+        <div class="detail-row"><strong>工具:</strong> {{ lastResult.tool }}</div>
         <div class="detail-row">
           <strong>参数:</strong>
           <pre>{{ JSON.stringify(lastResult.params, null, 2) }}</pre>
@@ -110,7 +105,7 @@
             <td>{{ stat.count }}</td>
             <td>
               <span :class="getSuccessRateClass(stat)">
-                {{ (stat.successCount / stat.count * 100).toFixed(1) }}%
+                {{ ((stat.successCount / stat.count) * 100).toFixed(1) }}%
               </span>
             </td>
             <td>{{ stat.avgDuration.toFixed(0) }}ms</td>
@@ -176,22 +171,22 @@ const resultClass = computed(() => {
 })
 
 // 方法
-const getCategoryIcon = (category) => {
+const getCategoryIcon = category => {
   return category === 'all' ? '📦' : CATEGORY_ICONS[category] || '🔧'
 }
 
-const getCategoryName = (category) => {
+const getCategoryName = category => {
   return category === 'all' ? '全部' : CATEGORY_NAMES[category] || category
 }
 
-const getSuccessRateClass = (stat) => {
+const getSuccessRateClass = stat => {
   const rate = (stat.successCount / stat.count) * 100
   if (rate >= 90) return 'rate-high'
   if (rate >= 70) return 'rate-medium'
   return 'rate-low'
 }
 
-const formatTime = (timestamp) => {
+const formatTime = timestamp => {
   const date = new Date(timestamp)
   return date.toLocaleTimeString('zh-CN')
 }
@@ -202,41 +197,35 @@ const clearHistory = () => {
   }
 }
 
-const showHistoryDetail = (record) => {
+const showHistoryDetail = record => {
   lastResult.value = record
 }
 
 // 演示工具执行
-const executeToolDemo = async (tool) => {
+const executeToolDemo = async tool => {
   // 根据工具生成演示参数
   const params = getDemoParams(tool.name)
 
   try {
-    await executeTool(
-      tool.name,
-      params,
-      {
-        onApprovalRequired: async (tool, params) => {
-          return confirm(
-            `工具 "${tool.name}" 需要批准\n\n` +
+    await executeTool(tool.name, params, {
+      onApprovalRequired: async (tool, params) => {
+        return confirm(
+          `工具 "${tool.name}" 需要批准\n\n` +
             `参数:\n${JSON.stringify(params, null, 2)}\n\n` +
             `确认执行？`
-          )
-        },
-        onWarning: async (warnings) => {
-          return confirm(
-            `警告:\n${warnings.join('\n')}\n\n确认继续？`
-          )
-        }
+        )
+      },
+      onWarning: async warnings => {
+        return confirm(`警告:\n${warnings.join('\n')}\n\n确认继续？`)
       }
-    )
+    })
   } catch (error) {
     console.error('执行失败:', error.message)
   }
 }
 
 // 获取演示参数
-const getDemoParams = (toolName) => {
+const getDemoParams = toolName => {
   const demoParams = {
     read_file: { path: '/Users/project/README.md' },
     write_file: { path: '/tmp/test.txt', content: 'Hello, World!' },
@@ -311,13 +300,13 @@ const getDemoParams = (toolName) => {
 }
 
 .categories button:hover {
-  border-color: #2196F3;
+  border-color: #2196f3;
   background: #f5f5f5;
 }
 
 .categories button.active {
-  border-color: #2196F3;
-  background: #2196F3;
+  border-color: #2196f3;
+  background: #2196f3;
   color: white;
 }
 
@@ -349,7 +338,7 @@ const getDemoParams = (toolName) => {
 }
 
 .tool-card.executing {
-  border-color: #2196F3;
+  border-color: #2196f3;
   background: #f0f7ff;
 }
 
@@ -390,7 +379,7 @@ const getDemoParams = (toolName) => {
   width: 100%;
   padding: 10px;
   border: none;
-  background: #2196F3;
+  background: #2196f3;
   color: white;
   border-radius: 6px;
   cursor: pointer;
@@ -399,7 +388,7 @@ const getDemoParams = (toolName) => {
 }
 
 .tool-card button:hover:not(:disabled) {
-  background: #1976D2;
+  background: #1976d2;
 }
 
 .tool-card button:disabled {
@@ -426,7 +415,7 @@ const getDemoParams = (toolName) => {
 }
 
 .result-header .success {
-  color: #4CAF50;
+  color: #4caf50;
   font-weight: 600;
 }
 
@@ -472,7 +461,8 @@ const getDemoParams = (toolName) => {
   overflow-y: auto;
 }
 
-.history-panel, .stats-panel {
+.history-panel,
+.stats-panel {
   background: white;
   border-radius: 12px;
   padding: 20px;
@@ -510,7 +500,7 @@ const getDemoParams = (toolName) => {
 }
 
 .history-item .success {
-  color: #4CAF50;
+  color: #4caf50;
 }
 
 .history-item .error {
@@ -546,7 +536,16 @@ const getDemoParams = (toolName) => {
   border-bottom: 1px solid #f0f0f0;
 }
 
-.rate-high { color: #4CAF50; font-weight: 600; }
-.rate-medium { color: #FF9800; font-weight: 600; }
-.rate-low { color: #f44336; font-weight: 600; }
+.rate-high {
+  color: #4caf50;
+  font-weight: 600;
+}
+.rate-medium {
+  color: #ff9800;
+  font-weight: 600;
+}
+.rate-low {
+  color: #f44336;
+  font-weight: 600;
+}
 </style>

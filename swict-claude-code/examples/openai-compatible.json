@@ -1,0 +1,9 @@
+{
+  "name": "openai-compatible",
+  "displayName": "OpenAI Compatible Endpoint",
+  "description": "支持 Anthropic API 兼容的 OpenAI 端点",
+  "baseUrl": "https://api.openai.com/v1",
+  "model": "claude-3-sonnet-20240229",
+  "tags": ["openai", "compatible"],
+  "notes": "如果你的组织使用 OpenAI 平台且支持 Anthropic 兼容模式"
+}

@@ -9,11 +9,23 @@ const props = defineProps({
   currentDir: String // 当前目录路径
 })
 
-const emit = defineEmits(['submit', 'update:mode', 'mention-file', 'refresh-dir', 'cli-tool-selected', 'reverse-search-start'])
+const emit = defineEmits([
+  'submit',
+  'update:mode',
+  'mention-file',
+  'refresh-dir',
+  'cli-tool-selected',
+  'reverse-search-start'
+])
 
 // CLI 工具配置
 const cliTools = [
-  { name: 'claudecode', command: 'claude --dangerously-skip-permissions', icon: '🤖', description: 'Claude Code Assistant' },
+  {
+    name: 'claudecode',
+    command: 'claude --dangerously-skip-permissions',
+    icon: '🤖',
+    description: 'Claude Code Assistant'
+  },
   { name: 'gemini', command: 'gemini', icon: '💎', description: 'Google Gemini' },
   { name: 'iflow', command: 'iflow', icon: '🌊', description: 'iFlow CLI' },
   { name: 'copilot', command: 'copilot', icon: '🚁', description: 'GitHub Copilot' },
@@ -35,7 +47,7 @@ const searchResults = ref([])
 const searchIndex = ref(0)
 
 // 选择 CLI 工具
-const selectCliTool = (tool) => {
+const selectCliTool = tool => {
   console.log('选择工具:', tool)
   selectedTool.value = tool.name
   showToolSelector.value = false
@@ -49,7 +61,7 @@ const selectCliTool = (tool) => {
 }
 
 // 切换工具选择器显示
-const toggleToolSelector = (e) => {
+const toggleToolSelector = e => {
   console.log('toggleToolSelector 被调用', e)
   if (e) {
     e.preventDefault()
@@ -88,7 +100,7 @@ const submit = () => {
 }
 
 // 处理上下键翻历史
-const handleKeyDown = (e) => {
+const handleKeyDown = e => {
   if (e.key === 'ArrowUp') {
     e.preventDefault()
     if (commandHistory.value.length === 0) return
@@ -134,7 +146,7 @@ const startReverseSearch = () => {
 }
 
 // 处理反向搜索输入
-const handleReverseSearchInput = (e) => {
+const handleReverseSearchInput = e => {
   if (e.key === 'Enter') {
     if (searchResults.value.length > 0 && searchIndex.value < searchResults.value.length) {
       inputValue.value = searchResults.value[searchIndex.value]
@@ -180,9 +192,7 @@ const performReverseSearch = () => {
     return
   }
 
-  searchResults.value = commandHistory.value.filter(cmd =>
-    cmd.toLowerCase().includes(query)
-  )
+  searchResults.value = commandHistory.value.filter(cmd => cmd.toLowerCase().includes(query))
   searchIndex.value = 0
 
   if (searchResults.value.length > 0) {
@@ -198,7 +208,7 @@ const handleAtKey = () => {
 }
 
 // 监听输入变化
-watch(inputValue, (val) => {
+watch(inputValue, val => {
   if (val.includes('@')) {
     handleAtKey()
   }
@@ -214,7 +224,10 @@ const getPlaceholder = () => {
   if (isReverseSearching.value) {
     return '搜索历史命令...'
   }
-  return props.placeholder || (props.mode === 'ai' ? '和 AI 对话，描述你想做什么...' : '输入命令，按 Enter 执行...')
+  return (
+    props.placeholder ||
+    (props.mode === 'ai' ? '和 AI 对话，描述你想做什么...' : '输入命令，按 Enter 执行...')
+  )
 }
 
 // 暴露方法
@@ -237,11 +250,11 @@ defineExpose({
       <!-- CLI 工具选择器按钮 -->
       <button
 class="cli-tool-btn" :title="selectedTool ? `当前工具: ${selectedTool}` : '选择 CLI 工具'" type="button"
-        @click="toggleToolSelector" @mousedown="(e) => console.log('mousedown', e)"
-        @mouseup="(e) => console.log('mouseup', e)">
+        @click="toggleToolSelector" @mousedown="e => console.log('mousedown', e)"
+        @mouseup="e => console.log('mouseup', e)">
         <span class="tool-icon">🛠️</span>
         <span v-if="selectedTool" class="tool-name">{{ selectedTool }}</span>
-        <span style="font-size: 10px; margin-left: 4px;">CLICK</span>
+        <span style="font-size: 10px; margin-left: 4px">CLICK</span>
       </button>
 
       <!-- 输入框 -->
@@ -269,10 +282,12 @@ class="submit-btn" :disabled="!inputValue.trim() || disabled" :title="mode === '
     </div>
 
     <!-- CLI 工具选择器下拉菜单 -->
-    <div v-show="showToolSelector" class="cli-tool-selector" style="display: block !important;">
+    <div v-show="showToolSelector" class="cli-tool-selector" style="display: block !important">
       <div class="tool-selector-header">
         <span class="selector-title">选择 CLI 工具</span>
-        <button class="close-selector" type="button" @click.stop="showToolSelector = false">✕</button>
+        <button class="close-selector" type="button" @click.stop="showToolSelector = false">
+          ✕
+        </button>
       </div>
       <div class="tool-list">
         <button
@@ -292,10 +307,12 @@ v-for="tool in cliTools" :key="tool.name" class="tool-item"
 <style scoped>
 .fixed-input {
   position: relative;
-  padding: 16px;
-  background: var(--bg-primary);
+  padding: 12px 16px;
+  background: var(--bg-secondary);
+  border-top: 1px solid var(--border-color);
   backdrop-filter: blur(20px);
-  transition: all 0.3s ease;
+  -webkit-backdrop-filter: blur(20px);
+  transition: all 0.2s ease;
 }
 
 .fixed-input.disabled {
@@ -306,12 +323,12 @@ v-for="tool in cliTools" :key="tool.name" class="tool-item"
 .input-container {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
   background: var(--bg-tertiary);
-  border-radius: 12px;
-  padding: 8px 12px;
-  border: 2px solid var(--border-color);
-  transition: all 0.2s;
+  border-radius: 8px;
+  padding: 6px 10px;
+  border: 1px solid var(--border-color);
+  transition: all 0.2s ease;
   position: relative;
 }
 
@@ -319,30 +336,30 @@ v-for="tool in cliTools" :key="tool.name" class="tool-item"
 .folder-icon-btn {
   background: transparent;
   border: 1px solid var(--border-color);
-  border-radius: 8px;
-  font-size: 14px;
+  border-radius: 6px;
+  font-size: 13px;
   cursor: pointer;
-  padding: 6px 10px;
+  padding: 4px 8px;
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
   transition: all 0.2s ease;
   color: var(--text-secondary);
   white-space: nowrap;
   font-family: 'SF Mono', Monaco, monospace;
+  font-size: 12px;
 }
 
 .folder-icon-btn:hover {
   background: var(--bg-hover);
   border-color: var(--accent-color);
   color: var(--text-primary);
-  transform: translateY(-1px);
 }
 
 .dir-name {
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 500;
-  max-width: 150px;
+  max-width: 120px;
   overflow: hidden;
   text-overflow: ellipsis;
 }
@@ -350,25 +367,20 @@ v-for="tool in cliTools" :key="tool.name" class="tool-item"
 .input-container:focus-within {
   border-color: var(--accent-color);
   background: var(--bg-hover);
-  box-shadow:
-    0 0 0 3px rgba(10, 132, 255, 0.1),
-    0 0 20px rgba(10, 132, 255, 0.15),
-    inset 0 1px 0 rgba(255, 255, 255, 0.1);
-  transform: translateY(-1px);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 0 0 3px rgba(10, 132, 255, 0.1);
 }
 
 .command-input {
   flex: 1;
   min-width: 0;
-  height: 44px;
-  padding: 0 12px;
+  height: 32px;
+  padding: 0 8px;
   background: transparent;
   border: none;
   outline: none;
   color: var(--text-primary);
   font-family: 'SF Mono', Menlo, Monaco, monospace;
-  font-size: 15px;
+  font-size: 13px;
   transition: all 0.2s ease;
 }
 
@@ -411,7 +423,9 @@ v-for="tool in cliTools" :key="tool.name" class="tool-item"
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.3);
   transform: translate(-50%, -50%);
-  transition: width 0.6s, height 0.6s;
+  transition:
+    width 0.6s,
+    height 0.6s;
 }
 
 .submit-btn:active::before {
@@ -480,8 +494,8 @@ v-for="tool in cliTools" :key="tool.name" class="tool-item"
   align-items: center;
   gap: 6px;
   padding: 8px 12px;
-  background: #007AFF;
-  border: 2px solid #007AFF;
+  background: #007aff;
+  border: 2px solid #007aff;
   border-radius: 8px;
   color: white;
   cursor: pointer;
@@ -496,8 +510,8 @@ v-for="tool in cliTools" :key="tool.name" class="tool-item"
 }
 
 .cli-tool-btn:hover {
-  background: #0056CC;
-  border-color: #0056CC;
+  background: #0056cc;
+  border-color: #0056cc;
   transform: scale(1.02);
 }
 

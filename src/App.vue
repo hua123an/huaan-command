@@ -1,7 +1,6 @@
 <script setup>
 import { ref, onMounted, onErrorCaptured } from 'vue'
 import Navigation from './components/Navigation.vue'
-import DebugPanel from './components/DebugPanel.vue'
 import SettingsModal from './components/SettingsModal.vue'
 import { useTheme } from './composables/useTheme'
 import { useLogsStore } from './stores/logs'
@@ -26,7 +25,6 @@ onMounted(() => {
 
   // 启动日志
   logsStore.success('Huaan Terminal 启动成功')
-  logsStore.info('按 Ctrl+Shift+L 打开日志面板')
 
   // 性能监控
   if (import.meta.env.DEV && window.performance) {
@@ -35,7 +33,7 @@ onMounted(() => {
       logsStore.info(`应用加载耗时: ${Math.round(perfData.loadEventEnd - perfData.fetchStart)}ms`)
     }
   }
-})// 全局错误捕获
+}) // 全局错误捕获
 onErrorCaptured((err, instance, info) => {
   logsStore.error(`组件错误: ${err.message}`, { info })
   return false // 阻止错误继续传播
@@ -47,13 +45,12 @@ onErrorCaptured((err, instance, info) => {
     <Navigation @open-settings="handleOpenSettings" />
     <div class="app-content">
       <router-view v-slot="{ Component }">
-        <!-- 移除 keep-alive 以减少内存占用，终端会话由 store 管理 -->
-        <component :is="Component" />
+        <!-- 为 Terminal 组件启用 keep-alive 以保持终端状态，避免导航时重新初始化 -->
+        <keep-alive include="Terminal">
+          <component :is="Component" />
+        </keep-alive>
       </router-view>
     </div>
-
-    <!-- 调试面板 -->
-    <DebugPanel />
 
     <!-- 设置弹窗 -->
     <SettingsModal :show="showSettings" @close="handleCloseSettings" />
@@ -76,12 +73,16 @@ body,
 }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Helvetica Neue", Arial, sans-serif;
+  font-family:
+    -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'SF Pro Display', 'Helvetica Neue', Arial,
+    sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   background: var(--bg-primary);
   color: var(--text-primary);
-  transition: background-color 0.3s ease, color 0.3s ease;
+  transition:
+    background-color 0.3s ease,
+    color 0.3s ease;
 }
 
 /* 主题切换平滑过渡 */
@@ -106,26 +107,48 @@ body {
   flex: 1;
   overflow: hidden;
   position: relative;
+  background: var(--bg-primary);
+  display: flex;
+  flex-direction: column;
 }
 
-/* 优化滚动条 */
+/* macOS 风格滚动条 */
 ::-webkit-scrollbar {
   width: 10px;
   height: 10px;
 }
 
 ::-webkit-scrollbar-track {
-  background: var(--bg-tertiary);
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--text-tertiary);
+  background: rgba(0, 0, 0, 0.3);
   border-radius: 5px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
   transition: background 0.2s;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--text-secondary);
+  background: rgba(0, 0, 0, 0.5);
+  border-radius: 5px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+:root.dark::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 5px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+:root.dark::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.5);
+  border-radius: 5px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
 }
 
 /* 性能优化：使用 GPU 加速 */

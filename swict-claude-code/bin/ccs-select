@@ -1,0 +1,6 @@
+#!/usr/bin/env node
+/**
+ * Claude Code 配置切换工具 - 快速选择模式
+ * 无参数时进入交互式选择菜单
+ */
+require('../claude-config-switcher.js');

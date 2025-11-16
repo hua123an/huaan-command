@@ -1,0 +1,9 @@
+{
+  "name": "local-dev",
+  "displayName": "Local Development",
+  "description": "本地开发环境",
+  "baseUrl": "http://localhost:8000/v1",
+  "model": "claude-3-sonnet",
+  "tags": ["local", "development", "testing"],
+  "notes": "仅用于开发和测试，请勿在生产环境使用"
+}

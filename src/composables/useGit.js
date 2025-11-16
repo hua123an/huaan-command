@@ -57,7 +57,11 @@ export function useGit(currentDir) {
       })
 
       // 解析状态
-      const lines = statusResult.stdout.split('\n').filter(line => line.trim())
+      const stdout = typeof statusResult === 'string' ? statusResult : statusResult.stdout
+      if (!stdout) {
+        throw new Error('No output from git status command')
+      }
+      const lines = stdout.split('\n').filter(line => line.trim())
       const branchLine = lines[0]
       const files = lines.slice(1)
 
@@ -110,7 +114,13 @@ export function useGit(currentDir) {
         workingDir: currentDir.value
       })
 
-      branches.value = result.stdout
+      // 后端返回字符串，直接使用
+      const stdout = typeof result === 'string' ? result : result.stdout
+      if (!stdout) {
+        throw new Error('No output from git branch command')
+      }
+
+      branches.value = stdout
         .split('\n')
         .filter(line => line.trim())
         .map(line => {
@@ -133,7 +143,13 @@ export function useGit(currentDir) {
         workingDir: currentDir.value
       })
 
-      commits.value = result.stdout
+      // 后端返回字符串，直接使用
+      const stdout = typeof result === 'string' ? result : result.stdout
+      if (!stdout) {
+        throw new Error('No output from git log command')
+      }
+
+      commits.value = stdout
         .split('\n')
         .filter(line => line.trim())
         .map(line => {

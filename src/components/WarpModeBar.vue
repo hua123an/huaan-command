@@ -19,9 +19,7 @@ const loadingModels = ref(false)
 const currentDir = ref('~')
 
 // 模式选项
-const modes = [
-  { id: 'terminal', name: '终端模式', icon: '⌨️', color: '#34C759' }
-]
+const modes = [{ id: 'terminal', name: '终端模式', icon: '⌨️', color: '#34C759' }]
 
 // AI 功能已移除
 async function loadModels() {
@@ -49,19 +47,19 @@ const getCurrentDir = async () => {
 const isSwitching = ref(false)
 
 // 切换模式（带防抖保护）
-const switchMode = (modeId) => {
+const switchMode = modeId => {
   // 如果已经是当前模式，忽略
   if (modeId === props.mode) return
-  
+
   // 如果正在切换中，忽略
   if (isSwitching.value) return
-  
+
   // 标记为切换中
   isSwitching.value = true
-  
+
   // 发出切换事件
   emit('update:mode', modeId)
-  
+
   // 600ms 后解除锁定（足够完成初始化）
   setTimeout(() => {
     isSwitching.value = false
@@ -69,7 +67,7 @@ const switchMode = (modeId) => {
 }
 
 // 选择模型
-const selectModel = (modelId) => {
+const selectModel = modelId => {
   emit('update:currentModel', modelId)
   showModelPicker.value = false
 }
@@ -115,31 +113,48 @@ const currentModelName = computed(() => {
     <div v-if="props.mode === 'ai'" class="actions">
       <button class="action-btn" title="@ 选择文件" @click="triggerFilePicker">
         <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-          <path d="M8 2C9.1 2 10 2.9 10 4C10 5.1 9.1 6 8 6C6.9 6 6 5.1 6 4C6 2.9 6.9 2 8 2ZM8 12C6.9 12 6 11.1 6 10C6 8.9 6.9 8 8 8C9.1 8 10 8.9 10 10C10 11.1 9.1 12 8 12ZM8 7C9.66 7 11 8.34 11 10C11 11.66 9.66 13 8 13C6.34 13 5 11.66 5 10C5 8.34 6.34 7 8 7Z" fill="currentColor"/>
+          <path
+            d="M8 2C9.1 2 10 2.9 10 4C10 5.1 9.1 6 8 6C6.9 6 6 5.1 6 4C6 2.9 6.9 2 8 2ZM8 12C6.9 12 6 11.1 6 10C6 8.9 6.9 8 8 8C9.1 8 10 8.9 10 10C10 11.1 9.1 12 8 12ZM8 7C9.66 7 11 8.34 11 10C11 11.66 9.66 13 8 13C6.34 13 5 11.66 5 10C5 8.34 6.34 7 8 7Z"
+            fill="currentColor"
+          />
         </svg>
         <span>@ 文件</span>
       </button>
-      
+
       <div class="divider"></div>
-      
+
       <!-- 模型选择器 -->
       <div class="model-selector">
-        <button 
-          class="model-btn" 
-          :disabled="true"
-          @click="showModelPicker = !showModelPicker"
-        >
+        <button class="model-btn" :disabled="true" @click="showModelPicker = !showModelPicker">
           <svg v-if="!loadingModels" width="14" height="14" viewBox="0 0 14 14" fill="none">
-            <circle cx="7" cy="7" r="3" stroke="currentColor" stroke-width="1.5"/>
-            <path d="M7 1V3M7 11V13M13 7H11M3 7H1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            <circle cx="7" cy="7" r="3" stroke="currentColor" stroke-width="1.5" />
+            <path
+              d="M7 1V3M7 11V13M13 7H11M3 7H1"
+              stroke="currentColor"
+              stroke-width="1.5"
+              stroke-linecap="round"
+            />
           </svg>
           <span v-if="loadingModels" class="loading-indicator">⏳</span>
           <span class="model-name">{{ loadingModels ? '加载中...' : currentModelName }}</span>
-          <svg v-if="!loadingModels" width="10" height="10" viewBox="0 0 10 10" fill="none" class="chevron">
-            <path d="M2 4L5 7L8 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          <svg
+            v-if="!loadingModels"
+            width="10"
+            height="10"
+            viewBox="0 0 10 10"
+            fill="none"
+            class="chevron"
+          >
+            <path
+              d="M2 4L5 7L8 4"
+              stroke="currentColor"
+              stroke-width="1.5"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
           </svg>
         </button>
-        
+
         <!-- 模型下拉菜单 -->
         <div v-if="showModelPicker" class="model-picker" @click.stop>
           <div class="picker-header">
@@ -154,20 +169,24 @@ const currentModelName = computed(() => {
               @click="selectModel(model.id)"
             >
               <span class="model-item-name">{{ model.id }}</span>
-              <svg v-if="model.id === props.currentModel" width="16" height="16" viewBox="0 0 16 16" fill="none">
-                <path d="M3 8L6.5 11.5L13 5" stroke="#0A84FF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              <svg
+                v-if="model.id === props.currentModel"
+                width="16"
+                height="16"
+                viewBox="0 0 16 16"
+                fill="none"
+              >
+                <path
+                  d="M3 8L6.5 11.5L13 5"
+                  stroke="#0A84FF"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
               </svg>
             </div>
           </div>
         </div>
-      </div>
-    </div>
-
-    <!-- 右侧：状态指示器 -->
-    <div class="status">
-      <div class="status-indicator" :class="{ active: props.mode === 'terminal' }">
-        <span class="dot"></span>
-        <span class="text">终端就绪</span>
       </div>
     </div>
   </div>
@@ -336,6 +355,7 @@ const currentModelName = computed(() => {
     opacity: 0;
     transform: translateY(-8px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -401,52 +421,14 @@ const currentModelName = computed(() => {
   font-weight: 500;
 }
 
-/* 状态指示器 */
-.status {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.status-indicator {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 4px 10px;
-  background: var(--bg-tertiary);
-  border-radius: 12px;
-  font-size: 12px;
-  color: var(--text-secondary);
-}
-
-.status-indicator.active {
-  background: rgba(52, 199, 89, 0.15);
-  color: var(--success-color);
-}
-
-.dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--text-tertiary);
-}
-
-.status-indicator.active .dot {
-  background: var(--success-color);
-  animation: pulse 2s ease-in-out infinite;
-}
-
 @keyframes pulse {
-  0%, 100% {
+  0%,
+  100% {
     opacity: 1;
   }
+
   50% {
     opacity: 0.5;
   }
 }
-
-.text {
-  font-weight: 500;
-}
 </style>
-

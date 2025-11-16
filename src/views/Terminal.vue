@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onActivated } from 'vue'
 import { useTerminalStore } from '../stores/terminal'
 import { useShortcuts } from '../composables/useShortcuts'
 import TerminalTabs from '../components/TerminalTabs.vue'
@@ -9,14 +9,27 @@ import SnippetsPanel from '../components/SnippetsPanel.vue'
 const store = useTerminalStore()
 const showSnippets = ref(false)
 const currentTerminalRef = ref(null)
+const isFirstMount = ref(true)
 
 onMounted(() => {
-  // 尝试恢复保存的会话
-  const restored = store.loadSessions()
-  
-  // 如果没有恢复任何会话，创建一个新的
-  if (!restored && store.sessions.length === 0) {
-    store.createSession()
+  // 只在首次挂载时初始化
+  if (isFirstMount.value) {
+    isFirstMount.value = false
+    // 尝试恢复保存的会话
+    const restored = store.loadSessions()
+
+    // 如果没有恢复任何会话，创建一个新的
+    if (!restored && store.sessions.length === 0) {
+      store.createSession()
+    }
+  }
+})
+
+// 从 keep-alive 恢复时不重新初始化，只确保有活动会话
+onActivated(() => {
+  // 确保有活动会话，但不重新初始化
+  if (store.sessions.length > 0 && !store.activeSessionId) {
+    store.setActiveSession(store.sessions[0].id)
   }
 })
 
@@ -34,7 +47,7 @@ useShortcuts({
       store.closeSession(store.activeSessionId)
     }
   },
-  onSwitchTab: (index) => {
+  onSwitchTab: index => {
     if (store.sessions[index]) {
       store.setActiveSession(store.sessions[index].id)
     }
@@ -45,11 +58,11 @@ useShortcuts({
     if (activeSession) {
       store.updateSessionBuffer(activeSession.id, [])
     }
-  },
+  }
   // AI 功能已移除
 })
 
-const useSnippet = (command) => {
+const useSnippet = command => {
   // 将命令发送到当前活动的终端
   const activeSession = store.sessions.find(s => s.id === store.activeSessionId)
   if (activeSession && currentTerminalRef.value && currentTerminalRef.value.length > 0) {
@@ -65,7 +78,7 @@ const useSnippet = (command) => {
 <template>
   <div class="terminal-container">
     <TerminalTabs @new-tab="handleNewTab" />
-    
+
     <div class="terminal-content">
       <!-- Block 模式（默认且唯一模式） -->
       <BlockTerminalPane
@@ -76,13 +89,9 @@ const useSnippet = (command) => {
         :visible="session.id === store.activeSessionId"
       />
     </div>
-    
+
     <!-- 代码片段面板 -->
-    <SnippetsPanel 
-      v-if="showSnippets"
-      @use-snippet="useSnippet"
-      @close="showSnippets = false"
-    />
+    <SnippetsPanel v-if="showSnippets" @use-snippet="useSnippet" @close="showSnippets = false" />
   </div>
 </template>
 

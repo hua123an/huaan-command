@@ -60,13 +60,8 @@ const detectNodeVersion = async () => {
 }
 
 // 执行命令
-const executeCommand = (cmd) => {
+const executeCommand = cmd => {
   emit('execute-command', cmd)
-}
-
-// 打开 Git 面板
-const openGitPanel = () => {
-  emit('open-git-panel')
 }
 
 // 刷新状态
@@ -160,11 +155,12 @@ onMounted(() => {
   width: 100%;
   height: 40px;
   padding: 0 12px;
-  background: #f7f7f7;
-  border-bottom: 1px solid #e0e0e0;
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border-color);
   font-size: 12px;
   gap: 12px;
   flex-shrink: 0;
+  color: var(--text-primary);
 }
 
 .left-section,
@@ -199,19 +195,19 @@ onMounted(() => {
   border: none;
   border-radius: 6px;
   background: transparent;
-  color: #666;
+  color: var(--text-secondary);
   cursor: pointer;
   transition: all 0.2s;
   font-size: 14px;
 }
 
 .icon-btn:hover {
-  background: #e5e5e5;
-  color: #333;
+  background: var(--bg-hover);
+  color: var(--text-primary);
 }
 
 .icon-btn:active {
-  background: #d5d5d5;
+  background: rgba(var(--accent-rgb, 10, 132, 255), 0.15);
 }
 
 /* 命令建议按钮 */
@@ -220,10 +216,10 @@ onMounted(() => {
   align-items: center;
   gap: 8px;
   padding: 4px 12px;
-  border: 1px solid #d0d0d0;
+  border: 1px solid var(--border-color);
   border-radius: 6px;
-  background: #fff;
-  color: #333;
+  background: var(--bg-primary);
+  color: var(--text-primary);
   font-family: 'SF Mono', 'Monaco', 'Consolas', monospace;
   font-size: 11px;
   cursor: pointer;
@@ -231,12 +227,13 @@ onMounted(() => {
 }
 
 .cmd-suggestion:hover {
-  border-color: #999;
-  background: #fafafa;
+  border-color: var(--accent-color);
+  background: var(--bg-hover);
+  color: var(--accent-color);
 }
 
 .cmd-suggestion .arrow {
-  opacity: 0.5;
+  opacity: 0.6;
   font-size: 12px;
 }
 
@@ -247,7 +244,8 @@ onMounted(() => {
   gap: 4px;
   padding: 3px 8px;
   border-radius: 6px;
-  background: #e8e8e8;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
   font-family: 'SF Mono', 'Monaco', 'Consolas', monospace;
   font-size: 11px;
   white-space: nowrap;
@@ -255,102 +253,42 @@ onMounted(() => {
 
 .status-badge .icon {
   font-size: 12px;
-  opacity: 0.8;
+  opacity: 0.7;
 }
 
 /* 版本徽章 */
 .status-badge.version {
-  background: #d4f4dd;
-  color: #2d6a3e;
+  background: rgba(34, 197, 94, 0.1);
+  color: var(--success-color, #22c55e);
 }
 
 /* 目录徽章 */
 .status-badge.dir {
-  background: #d4e4f4;
-  color: #2d4a6a;
+  background: rgba(10, 132, 255, 0.1);
+  color: var(--accent-color);
 }
 
 /* 分支徽章 */
 .status-badge.branch {
-  background: #f4e4d4;
-  color: #6a4a2d;
+  background: rgba(251, 146, 60, 0.1);
+  color: var(--warning-color, #fb923c);
 }
 
 /* 变更徽章 */
 .status-badge.changes {
-  background: #e0e0e0;
+  background: var(--bg-secondary);
   gap: 6px;
 }
 
 .status-badge.changes .count {
-  color: #666;
+  color: var(--text-secondary);
 }
 
 .status-badge.changes .add {
-  color: #28a745;
+  color: var(--success-color, #22c55e);
 }
 
 .status-badge.changes .del {
-  color: #d73a49;
-}
-
-/* 暗色模式 */
-@media (prefers-color-scheme: dark) {
-  .git-status-bar {
-    background: #2d2d2d;
-    border-top-color: #404040;
-  }
-
-  .icon-btn {
-    color: #aaa;
-  }
-
-  .icon-btn:hover {
-    background: #3d3d3d;
-    color: #fff;
-  }
-
-  .icon-btn:active {
-    background: #4d4d4d;
-  }
-
-  .cmd-suggestion {
-    border-color: #555;
-    background: #383838;
-    color: #ddd;
-  }
-
-  .cmd-suggestion:hover {
-    border-color: #666;
-    background: #404040;
-  }
-
-  .status-badge {
-    background: #383838;
-    color: #ddd;
-  }
-
-  .status-badge.version {
-    background: #2d4a3d;
-    color: #68d391;
-  }
-
-  .status-badge.dir {
-    background: #2d3a4a;
-    color: #63b3ed;
-  }
-
-  .status-badge.branch {
-    background: #4a3a2d;
-    color: #f6ad55;
-  }
-
-  .status-badge.changes {
-    background: #383838;
-  }
-
-  .status-badge.changes .count {
-    color: #aaa;
-  }
+  color: var(--error-color, #ef4444);
 }
 </style>

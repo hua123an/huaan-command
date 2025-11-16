@@ -22,15 +22,15 @@ const newSnippet = ref({
 // 过滤后的片段
 const filteredSnippets = computed(() => {
   let result = snippetsStore.snippets
-  
+
   if (selectedCategory.value !== 'all') {
     result = result.filter(s => s.category === selectedCategory.value)
   }
-  
+
   if (searchQuery.value) {
     result = snippetsStore.searchSnippets(searchQuery.value)
   }
-  
+
   return result
 })
 
@@ -44,7 +44,7 @@ const categoryStats = computed(() => {
 })
 
 // 使用片段
-const useSnippet = (snippet) => {
+const useSnippet = snippet => {
   if (snippet.variables && snippet.variables.length > 0) {
     // 需要输入变量
     const values = []
@@ -71,14 +71,14 @@ const saveSnippet = () => {
 }
 
 // 删除片段
-const deleteSnippet = (id) => {
+const deleteSnippet = id => {
   if (confirm('确定要删除这个代码片段吗？')) {
     snippetsStore.deleteSnippet(id)
   }
 }
 
 // 编辑片段
-const editSnippet = (snippet) => {
+const editSnippet = snippet => {
   editingSnippet.value = snippet
   newSnippet.value = { ...snippet }
   showAddDialog.value = true
@@ -105,18 +105,13 @@ const closeDialog = () => {
     </div>
 
     <div class="panel-toolbar">
-      <input 
-        v-model="searchQuery" 
-        type="text" 
-        placeholder="搜索片段..." 
-        class="search-input"
-      />
+      <input v-model="searchQuery" type="text" placeholder="搜索片段..." class="search-input" />
       <button class="add-btn" @click="showAddDialog = true">+ 新建</button>
     </div>
 
     <div class="category-tabs">
-      <button 
-        v-for="cat in ['all', ...snippetsStore.categories]" 
+      <button
+        v-for="cat in ['all', ...snippetsStore.categories]"
         :key="cat"
         :class="['category-tab', { active: selectedCategory === cat }]"
         @click="selectedCategory = cat"
@@ -127,16 +122,14 @@ const closeDialog = () => {
     </div>
 
     <div class="snippets-list">
-      <div 
-        v-for="snippet in filteredSnippets" 
-        :key="snippet.id"
-        class="snippet-card"
-      >
+      <div v-for="snippet in filteredSnippets" :key="snippet.id" class="snippet-card">
         <div class="snippet-header">
           <h3>{{ snippet.name }}</h3>
           <div class="snippet-actions">
             <button class="action-btn" title="编辑" @click="editSnippet(snippet)">✎</button>
-            <button class="action-btn delete" title="删除" @click="deleteSnippet(snippet.id)">🗑</button>
+            <button class="action-btn delete" title="删除" @click="deleteSnippet(snippet.id)">
+              🗑
+            </button>
           </div>
         </div>
         <p class="snippet-description">{{ snippet.description }}</p>
@@ -166,12 +159,18 @@ const closeDialog = () => {
         </div>
         <div class="form-group">
           <label>命令</label>
-          <textarea v-model="newSnippet.command" placeholder="命令内容 (使用 $1, $2 等作为变量)" rows="4"></textarea>
+          <textarea
+            v-model="newSnippet.command"
+            placeholder="命令内容 (使用 $1, $2 等作为变量)"
+            rows="4"
+          ></textarea>
         </div>
         <div class="form-group">
           <label>分类</label>
           <select v-model="newSnippet.category">
-            <option v-for="cat in snippetsStore.categories" :key="cat" :value="cat">{{ cat }}</option>
+            <option v-for="cat in snippetsStore.categories" :key="cat" :value="cat">
+              {{ cat }}
+            </option>
           </select>
         </div>
         <div class="dialog-actions">
@@ -455,4 +454,3 @@ const closeDialog = () => {
   cursor: pointer;
 }
 </style>
-

@@ -1,0 +1,53 @@
+#compdef claude-switcher ccs ccs-select
+
+# Zsh completion for claude-switcher
+
+local context curcontext="claude-switcher"
+state line
+typeset -A opt_args
+
+_arguments -C \
+  '(-h --help)'{-h,--help}'[显示帮助信息]' \
+  '(-v --version)'{-v,--version}'[显示版本信息]' \
+  '(-d --debug)'{-d,--debug}'[开启调试模式]' \
+  '*::command:_claude_switcher_commands'
+
+_claude_switcher_commands() {
+  local commands
+
+  commands=(
+    'add:添加新的服务商配置'
+    'list:列出所有配置'
+    'switch:切换到指定配置'
+    'remove:删除配置'
+    'show:显示当前配置'
+    'update:更新工具到最新版本'
+    'edit:编辑配置'
+    'validate:验证配置'
+    'verify:验证配置文件完整性'
+    'repair:修复配置文件完整性问题'
+    'test:测试连接'
+    'backup:备份配置'
+    'interactive:交互模式'
+    'health:健康检查'
+    'audit:查看审计日志'
+    'log:查看审计日志'
+    'help:显示帮助'
+  )
+
+  if (( CURRENT == 1 )); then
+    _describe 'commands' commands
+    return
+  fi
+
+  case $words[1] in
+    switch|remove|show|validate|test|verify|repair)
+      local providers
+      providers=($(grep -o '"name"[^,]*' ~/.claude/model-switcher.json 2>/dev/null | cut -d'"' -f4))
+      _describe 'providers' providers
+      ;;
+  esac
+}
+
+# Initial call to get the ball rolling
+_claude_switcher_commands "$@"

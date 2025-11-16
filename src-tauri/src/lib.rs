@@ -1,7 +1,9 @@
+mod claude_config;
 mod commands;
 mod task;
 mod terminal;
 
+use claude_config::{ClaudeConfigManager, ClaudeProvider};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fs;
@@ -283,6 +285,50 @@ fn get_home_dir() -> Result<String, String> {
         .map_err(|e| format!("无法获取 HOME 目录: {}", e))
 }
 
+// Claude 配置管理命令
+
+#[tauri::command]
+fn load_claude_providers() -> Result<Vec<ClaudeProvider>, String> {
+    ClaudeConfigManager::load_providers()
+}
+
+#[tauri::command]
+fn get_current_claude_provider() -> Result<Option<ClaudeProvider>, String> {
+    ClaudeConfigManager::get_current_provider()
+}
+
+#[tauri::command]
+fn add_claude_provider(
+    name: String,
+    base_url: String,
+    api_key: String,
+    model: String,
+) -> Result<(), String> {
+    let provider = ClaudeProvider {
+        name,
+        base_url,
+        api_key,
+        model,
+        created_at: chrono::Local::now().to_rfc3339(),
+    };
+    ClaudeConfigManager::add_provider(provider)
+}
+
+#[tauri::command]
+fn switch_claude_provider(provider_name: String) -> Result<(), String> {
+    ClaudeConfigManager::switch_provider(provider_name)
+}
+
+#[tauri::command]
+fn remove_claude_provider(provider_name: String) -> Result<(), String> {
+    ClaudeConfigManager::remove_provider(provider_name)
+}
+
+#[tauri::command]
+fn validate_claude_api_key(api_key: String) -> Result<bool, String> {
+    ClaudeConfigManager::validate_api_key(&api_key)
+}
+
 #[tauri::command]
 fn read_file_content(path: String) -> Result<String, String> {
     fs::read_to_string(&path).map_err(|e| format!("无法读取文件 {}: {}", path, e))
@@ -429,6 +475,13 @@ pub fn run() {
             commands::filesystem::move_file,
             commands::filesystem::path_exists,
             commands::filesystem::get_file_metadata,
+            // Claude 配置管理命令
+            load_claude_providers,
+            get_current_claude_provider,
+            add_claude_provider,
+            switch_claude_provider,
+            remove_claude_provider,
+            validate_claude_api_key,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

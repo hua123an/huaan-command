@@ -2,7 +2,8 @@
 <GitDashboard :current-dir="currentDir" :session-id="sessionId" />
 
 <!-- 或导入单个组件 -->
-<GitPanel :current-dir="currentDir" :session-id="sessionId" /><script setup>
+<GitPanel :current-dir="currentDir" :session-id="sessionId" />
+<script setup>
 /* global getComputedStyle */
 import { ref, computed, onMounted } from 'vue'
 import { useSettingsStore } from '../stores/settings'
@@ -75,7 +76,7 @@ const colorVariables = [
 ]
 
 // 方法
-const selectTheme = (themeKey) => {
+const selectTheme = themeKey => {
   applyTheme(themeKey)
 }
 
@@ -92,7 +93,7 @@ const importTheme = () => {
   fileInput.value?.click()
 }
 
-const handleFileImport = async (event) => {
+const handleFileImport = async event => {
   const file = event.target.files[0]
   if (file) {
     try {
@@ -104,7 +105,7 @@ const handleFileImport = async (event) => {
   }
 }
 
-const getThemePreviewStyle = (theme) => {
+const getThemePreviewStyle = theme => {
   // 简化的主题预览样式
   const previewStyles = {
     system: {
@@ -136,15 +137,18 @@ const getThemePreviewStyle = (theme) => {
   return previewStyles[theme.key] || previewStyles.system
 }
 
-const getColorValue = (colorKey) => {
-  return customColors.value[colorKey] || getComputedStyle(document.documentElement).getPropertyValue(colorKey)
+const getColorValue = colorKey => {
+  return (
+    customColors.value[colorKey] ||
+    getComputedStyle(document.documentElement).getPropertyValue(colorKey)
+  )
 }
 
 const updateColor = (colorKey, value) => {
   updateCustomColor(colorKey, value)
 }
 
-const editShortcut = (shortcut) => {
+const editShortcut = shortcut => {
   console.log('编辑快捷键:', shortcut)
 }
 
@@ -174,8 +178,11 @@ onMounted(() => {
       <div class="modal-body">
         <div class="settings-tabs">
           <button
-v-for="tab in tabs" :key="tab.key" :class="['tab-btn', { active: activeTab === tab.key }]"
-            @click="activeTab = tab.key">
+            v-for="tab in tabs"
+            :key="tab.key"
+            :class="['tab-btn', { active: activeTab === tab.key }]"
+            @click="activeTab = tab.key"
+          >
             {{ tab.label }}
           </button>
         </div>
@@ -188,8 +195,11 @@ v-for="tab in tabs" :key="tab.key" :class="['tab-btn', { active: activeTab === t
             <div class="theme-selector">
               <div class="theme-options">
                 <div
-v-for="theme in availableThemes" :key="theme.key"
-                  :class="['theme-option', { active: currentTheme === theme.key }]" @click="selectTheme(theme.key)">
+                  v-for="theme in availableThemes"
+                  :key="theme.key"
+                  :class="['theme-option', { active: currentTheme === theme.key }]"
+                  @click="selectTheme(theme.key)"
+                >
                   <div class="theme-preview" :style="getThemePreviewStyle(theme)">
                     <div class="preview-header"></div>
                     <div class="preview-content">
@@ -202,22 +212,14 @@ v-for="theme in availableThemes" :key="theme.key"
                     <div class="theme-name">{{ theme.name }}</div>
                     <div class="theme-description">{{ theme.description }}</div>
                   </div>
-                  <div v-if="currentTheme === theme.key" class="theme-indicator">
-                    ✓
-                  </div>
+                  <div v-if="currentTheme === theme.key" class="theme-indicator">✓</div>
                 </div>
               </div>
 
               <div class="theme-actions">
-                <button class="btn-secondary" @click="resetTheme">
-                  重置为默认
-                </button>
-                <button class="btn-secondary" @click="exportTheme">
-                  导出主题
-                </button>
-                <button class="btn-secondary" @click="importTheme">
-                  导入主题
-                </button>
+                <button class="btn-secondary" @click="resetTheme">重置为默认</button>
+                <button class="btn-secondary" @click="exportTheme">导出主题</button>
+                <button class="btn-secondary" @click="importTheme">导入主题</button>
               </div>
             </div>
 
@@ -229,11 +231,17 @@ v-for="theme in availableThemes" :key="theme.key"
                   <label :for="color.key">{{ color.name }}</label>
                   <div class="color-input-wrapper">
                     <input
-:id="color.key" type="color" :value="getColorValue(color.key)"
-                      @input="updateColor(color.key, $event.target.value)" />
+                      :id="color.key"
+                      type="color"
+                      :value="getColorValue(color.key)"
+                      @input="updateColor(color.key, $event.target.value)"
+                    />
                     <input
-type="text" :value="getColorValue(color.key)" class="color-text"
-                      @input="updateColor(color.key, $event.target.value)" />
+                      type="text"
+                      :value="getColorValue(color.key)"
+                      class="color-text"
+                      @input="updateColor(color.key, $event.target.value)"
+                    />
                   </div>
                   <div class="color-description">{{ color.description }}</div>
                 </div>
@@ -285,9 +293,7 @@ type="text" :value="getColorValue(color.key)" class="color-text"
                   <div class="shortcut-action">{{ shortcut.description }}</div>
                   <div class="shortcut-keys">{{ shortcut.keys.join(' + ') }}</div>
                 </div>
-                <button class="btn-secondary" @click="editShortcut(shortcut)">
-                  编辑
-                </button>
+                <button class="btn-secondary" @click="editShortcut(shortcut)">编辑</button>
               </div>
             </div>
           </div>
@@ -301,7 +307,13 @@ type="text" :value="getColorValue(color.key)" class="color-text"
     </div>
 
     <!-- 文件输入（隐藏） -->
-    <input ref="fileInput" type="file" accept=".json" style="display: none" @change="handleFileImport" />
+    <input
+      ref="fileInput"
+      type="file"
+      accept=".json"
+      style="display: none"
+      @change="handleFileImport"
+    />
   </div>
 </template>
 
@@ -471,7 +483,7 @@ select {
 
 .slider:before {
   position: absolute;
-  content: "";
+  content: '';
   height: 20px;
   width: 20px;
   left: 4px;
@@ -481,11 +493,11 @@ select {
   border-radius: 50%;
 }
 
-input:checked+.slider {
+input:checked + .slider {
   background-color: var(--accent-color);
 }
 
-input:checked+.slider:before {
+input:checked + .slider:before {
   transform: translateX(20px);
 }
 
@@ -650,7 +662,7 @@ input:checked+.slider:before {
   align-items: center;
 }
 
-.color-input-wrapper input[type="color"] {
+.color-input-wrapper input[type='color'] {
   width: 40px;
   height: 40px;
   border: none;
@@ -832,7 +844,6 @@ input:checked+.slider:before {
 }
 
 @keyframes pulse {
-
   0%,
   100% {
     opacity: 1;

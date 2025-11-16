@@ -6,31 +6,14 @@
         <span class="panel-icon">📋</span>
         <h3>活动日志</h3>
         <span class="log-count">{{ stats?.total || 0 }}</span>
-        <span v-if="stats?.errors > 0" class="error-badge">
-          {{ stats.errors }} 错误
-        </span>
+        <span v-if="stats?.errors > 0" class="error-badge"> {{ stats.errors }} 错误 </span>
       </div>
       <div class="header-actions">
-        <button
-          class="icon-btn"
-          title="导出日志"
-          @click="exportLogs"
-        >
-          💾
-        </button>
-        <button
-          class="icon-btn"
-          title="刷新"
-          :disabled="isLoading"
-          @click="refresh"
-        >
+        <button class="icon-btn" title="导出日志" @click="exportLogs">💾</button>
+        <button class="icon-btn" title="刷新" :disabled="isLoading" @click="refresh">
           <span :class="{ spinning: isLoading }">🔄</span>
         </button>
-        <button
-          class="icon-btn"
-          title="折叠/展开"
-          @click="toggleCollapse"
-        >
+        <button class="icon-btn" title="折叠/展开" @click="toggleCollapse">
           {{ isCollapsed ? '▼' : '▲' }}
         </button>
       </div>
@@ -71,13 +54,7 @@
             @input="applyFilters"
           />
 
-          <button
-            v-if="hasActiveFilters"
-            class="btn-clear"
-            @click="clearFilters"
-          >
-            ✕ 清除
-          </button>
+          <button v-if="hasActiveFilters" class="btn-clear" @click="clearFilters">✕ 清除</button>
         </div>
       </div>
 
@@ -131,12 +108,8 @@
 
       <!-- 底部操作 -->
       <div class="panel-footer">
-        <button class="btn btn-sm btn-danger" @click="clearLogs">
-          🗑️ 清空日志
-        </button>
-        <button class="btn btn-sm" @click="downloadLogs">
-          📥 下载日志
-        </button>
+        <button class="btn btn-sm btn-danger" @click="clearLogs">🗑️ 清空日志</button>
+        <button class="btn btn-sm" @click="downloadLogs">📥 下载日志</button>
       </div>
     </div>
 
@@ -223,9 +196,10 @@ const displayedLogs = computed(() => {
 
   if (filters.value.search) {
     const query = filters.value.search.toLowerCase()
-    filtered = filtered.filter(log =>
-      log.message.toLowerCase().includes(query) ||
-      JSON.stringify(log.data).toLowerCase().includes(query)
+    filtered = filtered.filter(
+      log =>
+        log.message.toLowerCase().includes(query) ||
+        JSON.stringify(log.data).toLowerCase().includes(query)
     )
   }
 
@@ -233,9 +207,11 @@ const displayedLogs = computed(() => {
 })
 
 const hasActiveFilters = computed(() => {
-  return filters.value.level !== null ||
-         filters.value.type !== null ||
-         (filters.value.search && filters.value.search.length > 0)
+  return (
+    filters.value.level !== null ||
+    filters.value.type !== null ||
+    (filters.value.search && filters.value.search.length > 0)
+  )
 })
 
 const toggleCollapse = () => {
@@ -271,7 +247,7 @@ const clearFilters = () => {
   }
 }
 
-const selectLog = (log) => {
+const selectLog = log => {
   selectedLog.value = log
   emit('log-selected', log)
 }
@@ -304,7 +280,7 @@ const scrollToBottom = () => {
   }
 }
 
-const getLevelIcon = (level) => {
+const getLevelIcon = level => {
   const icons = {
     debug: '🐛',
     info: 'ℹ️',
@@ -315,7 +291,7 @@ const getLevelIcon = (level) => {
   return icons[level] || 'ℹ️'
 }
 
-const getTypeLabel = (type) => {
+const getTypeLabel = type => {
   const labels = {
     ai_request: 'AI请求',
     ai_response: 'AI响应',
@@ -330,7 +306,7 @@ const getTypeLabel = (type) => {
   return labels[type] || type
 }
 
-const formatTime = (timestamp) => {
+const formatTime = timestamp => {
   const now = Date.now()
   const diff = now - timestamp
 
@@ -348,7 +324,7 @@ onMounted(() => {
   refresh()
 
   // 添加日志监听器
-  logListener = (newLog) => {
+  logListener = newLog => {
     logs.value.push(newLog)
     stats.value = activityLogger.getStats()
 
@@ -462,8 +438,12 @@ onMounted(() => {
 }
 
 @keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .panel-content {

@@ -11,9 +11,10 @@ const editingTab = ref(null)
 const editingTitle = ref('')
 
 // 确认对话框
-const { showDialog, dialogTitle, dialogMessage, dialogType, confirm, handleConfirm, handleCancel } = useConfirmDialog()
+const { showDialog, dialogTitle, dialogMessage, dialogType, confirm, handleConfirm, handleCancel } =
+  useConfirmDialog()
 
-const selectTab = (id) => {
+const selectTab = id => {
   store.setActiveSession(id)
 }
 
@@ -45,7 +46,7 @@ const startEdit = (session, event) => {
   event.stopPropagation()
   editingTab.value = session.id
   editingTitle.value = session.title
-  
+
   // 使用 nextTick 确保输入框已渲染
   setTimeout(() => {
     const input = document.getElementById(`edit-input-${session.id}`)
@@ -56,7 +57,7 @@ const startEdit = (session, event) => {
   }, 10)
 }
 
-const saveEdit = (id) => {
+const saveEdit = id => {
   if (editingTitle.value.trim()) {
     store.updateSessionTitle(id, editingTitle.value.trim())
   }
@@ -87,7 +88,7 @@ const handleKeydown = (event, id) => {
         :class="['tab', { active: session.id === store.activeSessionId }]"
         @click="selectTab(session.id)"
       >
-        <span 
+        <span
           v-if="editingTab !== session.id"
           class="tab-title"
           :title="'双击重命名：' + session.title"
@@ -106,7 +107,12 @@ const handleKeydown = (event, id) => {
         />
         <button class="close-btn" @click="closeTab(session.id, $event)">
           <svg width="12" height="12" viewBox="0 0 12 12">
-            <path d="M1 1L11 11M11 1L1 11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            <path
+              d="M1 1L11 11M11 1L1 11"
+              stroke="currentColor"
+              stroke-width="1.5"
+              stroke-linecap="round"
+            />
           </svg>
         </button>
       </div>
@@ -129,69 +135,46 @@ const handleKeydown = (event, id) => {
 .tabs-container {
   background: var(--bg-secondary);
   border-bottom: 1px solid var(--border-color);
-  padding: 12px 16px 0;
+  padding: 8px 12px 0;
   -webkit-app-region: drag;
   backdrop-filter: blur(30px);
   -webkit-backdrop-filter: blur(30px);
-  transition: all 0.3s ease;
 }
 
 .tabs {
   display: flex;
-  gap: 6px;
+  gap: 4px;
   align-items: flex-end;
 }
 
 .tab {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px 16px;
+  gap: 6px;
+  padding: 6px 12px;
   background: var(--bg-hover);
-  border-radius: 8px 8px 0 0;
+  border-radius: 6px 6px 0 0;
   cursor: pointer;
-  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-  font-size: 13px;
+  transition: all 0.2s ease;
+  font-size: 12px;
   font-weight: 500;
   color: var(--text-secondary);
   -webkit-app-region: no-drag;
-  min-width: 140px;
-  max-width: 220px;
+  min-width: 100px;
+  max-width: 180px;
   border: 1px solid var(--border-color);
   border-bottom: none;
-  position: relative;
-}
-
-.tab::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 2px;
-  background: linear-gradient(90deg, transparent, var(--accent-color), transparent);
-  opacity: 0;
-  transition: opacity 0.25s ease;
 }
 
 .tab:hover {
   background: var(--bg-active);
   color: var(--text-primary);
-  transform: translateY(-1px);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
 
 .tab.active {
   background: var(--bg-primary);
   color: var(--text-primary);
-  box-shadow: 
-    0 -2px 10px rgba(0, 0, 0, 0.15),
-    0 0 0 1px var(--accent-color);
   border-color: var(--accent-color);
-}
-
-.tab.active::before {
-  opacity: 1;
 }
 
 .tab-title {
@@ -209,64 +192,54 @@ const handleKeydown = (event, id) => {
   border-radius: 4px;
   padding: 2px 6px;
   color: var(--text-primary);
-  font-size: 13px;
-  font-weight: 500;
+  font-size: 12px;
   outline: none;
-  min-width: 80px;
-}
-
-.tab-title-input:focus {
-  background: var(--bg-hover);
-  border-color: var(--accent-hover);
-  box-shadow: 0 0 0 2px var(--accent-color);
 }
 
 .close-btn {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 18px;
-  height: 18px;
+  width: 16px;
+  height: 16px;
   border: none;
-  background: var(--bg-hover);
+  background: transparent;
   color: var(--text-tertiary);
   cursor: pointer;
-  border-radius: 4px;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: 3px;
+  transition: all 0.2s ease;
   padding: 0;
-  opacity: 0;
+  font-size: 12px;
 }
 
 .tab:hover .close-btn {
   opacity: 1;
+  background: rgba(255, 59, 48, 0.2);
+  color: #ff3b30;
 }
 
 .close-btn:hover {
-  background: var(--error-color);
-  color: white;
-  transform: scale(1.1);
+  background: rgba(255, 59, 48, 0.3);
 }
 
 .new-tab-btn {
-  width: 32px;
-  height: 32px;
+  width: 28px;
+  height: 28px;
   border: none;
   background: var(--bg-hover);
   color: var(--text-secondary);
-  border-radius: 8px;
+  border-radius: 6px;
   cursor: pointer;
-  font-size: 20px;
+  font-size: 18px;
   line-height: 1;
-  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.2s ease;
   -webkit-app-region: no-drag;
-  margin-bottom: 2px;
+  margin-bottom: 1px;
   border: 1px solid var(--border-color);
 }
 
 .new-tab-btn:hover {
-  background: var(--accent-color);
-  color: white;
-  transform: scale(1.05);
-  box-shadow: 0 4px 12px rgba(10, 132, 255, 0.3);
+  background: var(--bg-active);
+  color: var(--text-primary);
 }
 </style>

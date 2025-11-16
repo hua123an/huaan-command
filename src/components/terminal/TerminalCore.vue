@@ -74,7 +74,7 @@ const initTerminal = async () => {
 }
 
 // 处理终端输入
-const handleTerminalInput = async (data) => {
+const handleTerminalInput = async data => {
   try {
     await invoke('write_terminal', {
       sessionId: props.session.id,
@@ -94,7 +94,7 @@ const startTerminalProcess = async () => {
     })
 
     // 监听输出
-    unlisten.value = await listen(`terminal-output-${props.session.id}`, (event) => {
+    unlisten.value = await listen(`terminal-output-${props.session.id}`, event => {
       if (terminal.value) {
         terminal.value.write(event.payload)
         emit('output', event.payload)
@@ -109,7 +109,7 @@ const startTerminalProcess = async () => {
 const resize = () => {
   if (fitAddon.value && props.visible) {
     fitAddon.value.fit()
-    
+
     if (terminal.value) {
       invoke('resize_terminal', {
         sessionId: props.session.id,
@@ -126,12 +126,12 @@ const cleanup = () => {
     unlisten.value()
     unlisten.value = null
   }
-  
+
   if (terminal.value) {
     terminal.value.dispose()
     terminal.value = null
   }
-  
+
   fitAddon.value = null
   isInitialized.value = false
 }
@@ -146,11 +146,14 @@ onUnmounted(() => {
 })
 
 // 监听可见性变化
-watch(() => props.visible, (visible) => {
-  if (visible) {
-    nextTick(() => resize())
+watch(
+  () => props.visible,
+  visible => {
+    if (visible) {
+      nextTick(() => resize())
+    }
   }
-})
+)
 
 // 暴露方法
 defineExpose({
@@ -162,11 +165,7 @@ defineExpose({
 
 <template>
   <div class="terminal-core">
-    <div 
-      ref="terminalRef" 
-      class="terminal-container"
-      :class="{ 'terminal-hidden': !visible }"
-    />
+    <div ref="terminalRef" class="terminal-container" :class="{ 'terminal-hidden': !visible }" />
   </div>
 </template>
 

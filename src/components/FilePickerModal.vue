@@ -15,27 +15,27 @@ const searchQuery = ref('')
 const currentPath = ref(props.currentDir || '~')
 
 // 加载目录内容
-const loadDirectory = async (path) => {
+const loadDirectory = async path => {
   loading.value = true
   try {
     const { invoke } = await import('@tauri-apps/api/core')
-    
+
     // 扩展 ~ 为实际路径
     let actualPath = path
     if (path === '~' || path.startsWith('~/')) {
       const homeDir = await invoke('get_home_dir')
       actualPath = path.replace('~', homeDir)
     }
-    
+
     const result = await invoke('list_directory', { path: actualPath })
-    
+
     // 排序：目录优先，然后按名称
     files.value = result.sort((a, b) => {
       if (a.is_dir && !b.is_dir) return -1
       if (!a.is_dir && b.is_dir) return 1
       return a.name.localeCompare(b.name)
     })
-    
+
     currentPath.value = actualPath
   } catch (error) {
     console.error('Failed to load directory:', error)
@@ -46,24 +46,25 @@ const loadDirectory = async (path) => {
 }
 
 // 监听显示状态
-watch(() => props.show, (newVal) => {
-  if (newVal) {
-    loadDirectory(props.currentDir || '~')
+watch(
+  () => props.show,
+  newVal => {
+    if (newVal) {
+      loadDirectory(props.currentDir || '~')
+    }
   }
-})
+)
 
 // 过滤文件列表
 const filteredFiles = computed(() => {
   if (!searchQuery.value) return files.value
-  
+
   const query = searchQuery.value.toLowerCase()
-  return files.value.filter(file => 
-    file.name.toLowerCase().includes(query)
-  )
+  return files.value.filter(file => file.name.toLowerCase().includes(query))
 })
 
 // 进入目录（双击）
-const enterDirectory = (file) => {
+const enterDirectory = file => {
   if (file.is_dir) {
     loadDirectory(file.path)
   }
@@ -76,7 +77,7 @@ const goUp = () => {
 }
 
 // 选择文件/目录（单击直接选择，不区分文件还是目录）
-const selectItem = (file) => {
+const selectItem = file => {
   emit('select', {
     path: file.path,
     name: file.name,
@@ -96,7 +97,7 @@ const selectCurrentDir = () => {
 }
 
 // 格式化文件大小
-const formatSize = (bytes) => {
+const formatSize = bytes => {
   if (!bytes) return ''
   if (bytes < 1024) return `${bytes} B`
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
@@ -105,42 +106,42 @@ const formatSize = (bytes) => {
 }
 
 // 获取文件图标
-const getFileIcon = (file) => {
+const getFileIcon = file => {
   if (file.is_dir) return '📁'
-  
+
   const ext = file.name.split('.').pop()?.toLowerCase()
   const iconMap = {
-    'js': '📜',
-    'ts': '📘',
-    'vue': '💚',
-    'jsx': '⚛️',
-    'tsx': '⚛️',
-    'json': '📋',
-    'md': '📝',
-    'txt': '📄',
-    'rs': '🦀',
-    'py': '🐍',
-    'go': '🔷',
-    'java': '☕',
-    'html': '🌐',
-    'css': '🎨',
-    'scss': '🎨',
-    'png': '🖼️',
-    'jpg': '🖼️',
-    'jpeg': '🖼️',
-    'gif': '🖼️',
-    'svg': '🖼️',
-    'pdf': '📕',
-    'zip': '📦',
-    'tar': '📦',
-    'gz': '📦',
+    js: '📜',
+    ts: '📘',
+    vue: '💚',
+    jsx: '⚛️',
+    tsx: '⚛️',
+    json: '📋',
+    md: '📝',
+    txt: '📄',
+    rs: '🦀',
+    py: '🐍',
+    go: '🔷',
+    java: '☕',
+    html: '🌐',
+    css: '🎨',
+    scss: '🎨',
+    png: '🖼️',
+    jpg: '🖼️',
+    jpeg: '🖼️',
+    gif: '🖼️',
+    svg: '🖼️',
+    pdf: '📕',
+    zip: '📦',
+    tar: '📦',
+    gz: '📦'
   }
-  
+
   return iconMap[ext] || '📄'
 }
 
 // 快捷键
-const handleKeydown = (event) => {
+const handleKeydown = event => {
   if (event.key === 'Escape') {
     emit('close')
   } else if (event.key === 'Enter' && filteredFiles.value.length > 0) {
@@ -171,59 +172,80 @@ onMounted(() => {
         </div>
         <button class="close-btn" @click="emit('close')">✕</button>
       </div>
-      
+
       <!-- 搜索栏 -->
       <div class="search-bar">
         <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-          <circle cx="7" cy="7" r="5" stroke="currentColor" stroke-width="1.5"/>
-          <path d="M11 11L14 14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+          <circle cx="7" cy="7" r="5" stroke="currentColor" stroke-width="1.5" />
+          <path d="M11 11L14 14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
         </svg>
-        <input 
+        <input
           v-model="searchQuery"
           type="text"
           placeholder="搜索文件..."
           class="search-input"
           autofocus
         />
-        <button v-if="searchQuery" class="clear-btn" @click="searchQuery = ''">
-          ✕
-        </button>
+        <button v-if="searchQuery" class="clear-btn" @click="searchQuery = ''">✕</button>
       </div>
-      
+
       <!-- 工具栏 -->
       <div class="toolbar">
         <button class="tool-btn" :disabled="currentPath === '/'" @click="goUp">
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-            <path d="M13 10L8 5L3 10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            <path
+              d="M13 10L8 5L3 10"
+              stroke="currentColor"
+              stroke-width="1.5"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
           </svg>
           <span>上级目录</span>
         </button>
         <button class="tool-btn" @click="loadDirectory(currentPath)">
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-            <path d="M14 8C14 11.3137 11.3137 14 8 14C4.68629 14 2 11.3137 2 8C2 4.68629 4.68629 2 8 2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-            <path d="M14 4V8H10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            <path
+              d="M14 8C14 11.3137 11.3137 14 8 14C4.68629 14 2 11.3137 2 8C2 4.68629 4.68629 2 8 2"
+              stroke="currentColor"
+              stroke-width="1.5"
+              stroke-linecap="round"
+            />
+            <path
+              d="M14 4V8H10"
+              stroke="currentColor"
+              stroke-width="1.5"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
           </svg>
           <span>刷新</span>
         </button>
         <button class="tool-btn select-current" @click="selectCurrentDir">
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-            <path d="M3 8L6.5 11.5L13 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <path
+              d="M3 8L6.5 11.5L13 5"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
           </svg>
           <span>选择当前目录</span>
         </button>
       </div>
-      
+
       <!-- 文件列表 -->
       <div class="file-list">
         <div v-if="loading" class="loading">
           <div class="spinner"></div>
           <span>加载中...</span>
         </div>
-        
+
         <div v-else-if="filteredFiles.length === 0" class="empty">
           <span>{{ searchQuery ? '未找到匹配的文件' : '空目录' }}</span>
         </div>
-        
+
         <div
           v-for="file in filteredFiles"
           v-else
@@ -243,42 +265,50 @@ onMounted(() => {
           </div>
           <div class="file-actions">
             <!-- 选择按钮：文件和目录都可以选择 -->
-            <button 
+            <button
               class="action-btn select-btn"
               :title="file.is_dir ? '选择此目录' : '选择此文件'"
               @click.stop="selectItem(file)"
             >
               <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                <path d="M3 8L6.5 11.5L13 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <path
+                  d="M3 8L6.5 11.5L13 5"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
               </svg>
             </button>
             <!-- 进入按钮：只有目录才有 -->
-            <button 
+            <button
               v-if="file.is_dir"
               class="action-btn enter-btn"
               title="进入目录"
               @click.stop="enterDirectory(file)"
             >
               <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                <path d="M6 4L10 8L6 12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                <path
+                  d="M6 4L10 8L6 12"
+                  stroke="currentColor"
+                  stroke-width="1.5"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
               </svg>
             </button>
           </div>
         </div>
       </div>
-      
+
       <!-- 底部提示 -->
       <div class="modal-footer">
         <div class="hint">
           <span class="hint-section">
-            <strong>✓</strong> 选择 ·
-            <strong>→</strong> 进入目录 ·
-            <strong>双击</strong> 快速进入
+            <strong>✓</strong> 选择 · <strong>→</strong> 进入目录 · <strong>双击</strong> 快速进入
           </span>
           <span class="hint-divider">|</span>
-          <span class="hint-section">
-            <kbd>Esc</kbd> 取消
-          </span>
+          <span class="hint-section"> <kbd>Esc</kbd> 取消 </span>
         </div>
       </div>
     </div>
@@ -303,8 +333,12 @@ onMounted(() => {
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 .file-picker-modal {
@@ -446,7 +480,7 @@ onMounted(() => {
 .tool-btn:hover:not(:disabled) {
   background: rgba(255, 255, 255, 0.1);
   border-color: rgba(10, 132, 255, 0.5);
-  color: #0A84FF;
+  color: #0a84ff;
 }
 
 .tool-btn:disabled {
@@ -457,7 +491,7 @@ onMounted(() => {
 .tool-btn.select-current {
   background: rgba(10, 132, 255, 0.1);
   border-color: rgba(10, 132, 255, 0.3);
-  color: #0A84FF;
+  color: #0a84ff;
   margin-left: auto;
 }
 
@@ -489,13 +523,15 @@ onMounted(() => {
   width: 24px;
   height: 24px;
   border: 3px solid rgba(255, 255, 255, 0.1);
-  border-top-color: #0A84FF;
+  border-top-color: #0a84ff;
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .file-item {
@@ -575,7 +611,7 @@ onMounted(() => {
 
 .action-btn.select-btn {
   background: rgba(52, 199, 89, 0.2);
-  color: #34C759;
+  color: #34c759;
 }
 
 .action-btn.select-btn:hover {
@@ -585,7 +621,7 @@ onMounted(() => {
 
 .action-btn.enter-btn {
   background: rgba(10, 132, 255, 0.2);
-  color: #0A84FF;
+  color: #0a84ff;
 }
 
 .action-btn.enter-btn:hover {
@@ -635,4 +671,3 @@ kbd {
   margin: 0 2px;
 }
 </style>
-

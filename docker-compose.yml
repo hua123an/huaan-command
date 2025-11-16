@@ -1,0 +1,68 @@
+# Docker Compose 配置
+version: '3.8'
+
+services:
+  huaan-command:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "1420:1420"
+    volumes:
+      - ./data:/home/tauri/app/data
+    environment:
+      - NODE_ENV=production
+      - TAURI_CLI_PATH=/app/bin
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "npm", "run", "healthcheck"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+  
+  # 数据库服务（可选）
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: huaan_command
+      POSTGRES_USER: huaan
+      POSTGRES_PASSWORD: ${HUAAN_DB_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+  
+  # Redis 服务（可选）
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  data:
+    driver: local
+
+networks:
+  huaan-network:
+    driver: bridge

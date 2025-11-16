@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Huaan Command - 修复验证测试</title>
+  <style>
+    body {
+      font-family: 'SF Mono', Monaco, monospace;
+      background: #1a1a1a;
+      color: #fff;
+      padding: 20px;
+      max-width: 800px;
+      margin: 0 auto;
+    }
+    .test-section {
+      background: #2a2a2a;
+      border-radius: 8px;
+      padding: 20px;
+      margin: 20px 0;
+      border-left: 4px solid #0a84ff;
+    }
+    .test-section h2 {
+      margin-top: 0;
+      color: #0a84ff;
+    }
+    .status {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: bold;
+    }
+    .status.pass {
+      background: #34c759;
+      color: #000;
+    }
+    .status.fail {
+      background: #ff3b30;
+    }
+    .status.pending {
+      background: #ffd60a;
+      color: #000;
+    }
+    pre {
+      background: #000;
+      padding: 12px;
+      border-radius: 4px;
+      overflow-x: auto;
+    }
+    button {
+      background: #0a84ff;
+      color: #fff;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+      margin: 5px;
+    }
+    button:hover {
+      background: #0066cc;
+    }
+    .log {
+      background: #000;
+      padding: 12px;
+      border-radius: 4px;
+      max-height: 400px;
+      overflow-y: auto;
+      margin-top: 10px;
+      font-size: 12px;
+      line-height: 1.6;
+    }
+    .log-entry {
+      margin: 4px 0;
+    }
+    .log-entry.info { color: #64d2ff; }
+    .log-entry.success { color: #34c759; }
+    .log-entry.error { color: #ff3b30; }
+    .log-entry.warning { color: #ffd60a; }
+  </style>
+</head>
+<body>
+  <h1>🧪 Huaan Command - 修复验证测试</h1>
+  <p>测试硬编码修复和目录检测功能</p>
+
+  <!-- Test 1: localStorage 检查 -->
+  <div class="test-section">
+    <h2>📦 Test 1: localStorage 检查</h2>
+    <button onclick="testLocalStorage()">运行测试</button>
+    <button onclick="clearCache()">清除缓存</button>
+    <div id="test1-result"></div>
+  </div>
+
+  <!-- Test 2: 模型配置检查 -->
+  <div class="test-section">
+    <h2>🤖 Test 2: 模型配置检查</h2>
+    <button onclick="testModelConfig()">检查配置</button>
+    <div id="test2-result"></div>
+  </div>
+
+  <!-- Test 3: 打开应用 -->
+  <div class="test-section">
+    <h2>🚀 Test 3: 打开应用进行手动测试</h2>
+    <p>应用已在 <a href="http://localhost:1420" target="_blank" style="color: #0a84ff;">http://localhost:1420</a> 运行</p>
+    <h3>测试步骤：</h3>
+    <ol>
+      <li><strong>测试模型显示：</strong>
+        <ul>
+          <li>切换到 AI 模式（点击 🤖 按钮）</li>
+          <li>点击模型选择器</li>
+          <li>应该看到 <code>deepseek-chat</code> 和 <code>deepseek-reasoner</code></li>
+        </ul>
+      </li>
+      <li><strong>测试目录检测：</strong>
+        <ul>
+          <li>在终端模式执行: <code>cd kero && pwd</code></li>
+          <li>切换到 AI 模式</li>
+          <li>输入: "熟悉一下这个项目"</li>
+          <li>打开浏览器控制台（F12）查看日志</li>
+          <li>应该看到: <code>🎯 智能任务使用目录: /Users/huaan/kero</code></li>
+        </ul>
+      </li>
+    </ol>
+  </div>
+
+  <!-- Console Log -->
+  <div class="test-section">
+    <h2>📝 测试日志</h2>
+    <div class="log" id="console-log"></div>
+  </div>
+
+  <script>
+    const log = (message, type = 'info') => {
+      const logDiv = document.getElementById('console-log');
+      const entry = document.createElement('div');
+      entry.className = `log-entry ${type}`;
+      entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+      logDiv.appendChild(entry);
+      logDiv.scrollTop = logDiv.scrollHeight;
+    };
+
+    function testLocalStorage() {
+      log('开始检查 localStorage...', 'info');
+
+      const provider = localStorage.getItem('ai-provider');
+      const apiKey = localStorage.getItem('ai-api-key');
+      const endpoint = localStorage.getItem('ai-endpoint');
+      const model = localStorage.getItem('ai-model');
+
+      const result = document.getElementById('test1-result');
+      result.innerHTML = `
+        <pre>
+当前 localStorage 配置:
+━━━━━━━━━━━━━━━━━━━━━━━━━━
+Provider: ${provider || '(未设置)'}
+Endpoint: ${endpoint || '(未设置)'}
+Model:    ${model || '(未设置)'}
+API Key:  ${apiKey ? '***已设置***' : '(未设置)'}
+━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+<span class="status ${!model || model === 'deepseek-chat' ? 'pass' : 'warning'}">
+  ${!model ? '✓ 未缓存旧模型' : model === 'deepseek-chat' ? '✓ 使用正确模型' : '⚠️ 使用了缓存模型'}
+</span>
+        </pre>
+      `;
+
+      log(`Provider: ${provider}`, 'success');
+      log(`Model: ${model || '(未设置)'}`, model === 'deepseek-chat' ? 'success' : 'warning');
+    }
+
+    function clearCache() {
+      log('清除 AI 模型缓存...', 'info');
+
+      localStorage.removeItem('ai-model');
+      localStorage.removeItem('terminal-sessions');
+
+      log('✓ 已清除 ai-model', 'success');
+      log('✓ 已清除 terminal-sessions', 'success');
+      log('建议重新加载应用: location.reload()', 'warning');
+
+      setTimeout(() => {
+        if (confirm('是否重新加载应用以应用更改？')) {
+          window.location.reload();
+        }
+      }, 500);
+    }
+
+    function testModelConfig() {
+      log('检查模型配置逻辑...', 'info');
+
+      const AI_PROVIDERS = {
+        openai: { defaultModel: 'gpt-4o-mini' },
+        deepseek: { defaultModel: 'deepseek-chat' },
+        zhipu: { defaultModel: 'glm-4' },
+        moonshot: { defaultModel: 'moonshot-v1-8k' }
+      };
+
+      const provider = localStorage.getItem('ai-provider') || 'openai';
+      const expectedModel = AI_PROVIDERS[provider]?.defaultModel;
+      const currentModel = localStorage.getItem('ai-model');
+
+      const result = document.getElementById('test2-result');
+      const isCorrect = !currentModel || currentModel === expectedModel;
+
+      result.innerHTML = `
+        <pre>
+模型配置检查:
+━━━━━━━━━━━━━━━━━━━━━━━━━━
+当前 Provider:  ${provider}
+期望默认模型:   ${expectedModel}
+实际缓存模型:   ${currentModel || '(未设置)'}
+━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+<span class="status ${isCorrect ? 'pass' : 'fail'}">
+  ${isCorrect ? '✓ 配置正确' : '✗ 配置不匹配（需清除缓存）'}
+</span>
+        </pre>
+      `;
+
+      log(`Provider: ${provider}`, 'info');
+      log(`Expected: ${expectedModel}`, 'info');
+      log(`Actual: ${currentModel || '(未设置)'}`, isCorrect ? 'success' : 'error');
+      log(isCorrect ? '✓ 配置正确' : '⚠️ 建议清除缓存', isCorrect ? 'success' : 'warning');
+    }
+
+    // 自动运行初始测试
+    window.onload = () => {
+      log('测试页面已加载', 'success');
+      log('点击按钮开始测试', 'info');
+    };
+  </script>
+</body>
+</html>

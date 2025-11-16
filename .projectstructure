@@ -1,0 +1,193 @@
+# Huaan Command - 项目结构
+
+## 📁 根目录文件
+
+### 配置文件
+- `package.json` - Node.js 项目配置和依赖
+- `package-lock.json` - 依赖锁定文件
+- `tsconfig.json` - TypeScript 配置
+- `tsconfig.node.json` - Node.js TypeScript 配置
+- `vite.config.js` - Vite 构建配置
+- `eslint.config.js` - ESLint 代码规范配置
+- `index.html` - 应用入口 HTML
+
+### Docker 配置
+- `Dockerfile` - Docker 镜像构建配置
+- `docker-compose.yml` - Docker Compose 编排配置
+
+### 文档
+- `README.md` - 项目介绍（英文）
+- `README_CN.md` - 项目介绍（中文）
+- `CHANGELOG.md` - 变更日志
+- `CONTRIBUTING.md` - 贡献指南
+- `DEVELOPMENT_GUIDE.md` - 开发指南
+- `RELEASE_NOTES.md` - 发布说明
+
+## 📂 目录结构
+
+```
+huaan-command-dev/
+├── src/                      # 前端源代码
+│   ├── main.js              # Vue 应用入口
+│   ├── App.vue              # 根组件
+│   ├── assets/              # 静态资源
+│   ├── components/          # Vue 组件
+│   │   ├── ActivityLogPanel.vue
+│   │   ├── AutocompleteMenu.vue
+│   │   ├── BlockTerminalPane.vue
+│   │   ├── CommandBlock.vue
+│   │   ├── ConfirmDialog.vue
+│   │   ├── DebugPanel.vue
+│   │   ├── FilePickerModal.vue
+│   │   ├── FixedInput.vue
+│   │   ├── GitStatusBar.vue
+│   │   ├── HistorySearchPanel.vue
+│   │   ├── Navigation.vue
+│   │   ├── OperationConfirmDialog.vue
+│   │   ├── SettingsModal.vue
+│   │   ├── SnippetsPanel.vue
+│   │   ├── StatsPanel.vue
+│   │   ├── TerminalPane.vue
+│   │   ├── TerminalTabs.vue
+│   │   ├── ToolsDemo.vue
+│   │   ├── UndoHistoryPanel.vue
+│   │   ├── WarpModeBar.vue
+│   │   └── terminal/        # 终端相关子组件
+│   ├── composables/         # Vue 组合式函数
+│   │   ├── useAsyncOperation.js
+│   │   ├── useBuiltinCommands.js
+│   │   ├── useCommandHistory.js
+│   │   ├── useDirectoryTracker.js
+│   │   ├── useLogger.js
+│   │   └── useTheme.js
+│   ├── examples/            # 示例代码
+│   ├── router/              # Vue Router 路由配置
+│   ├── security/            # 安全相关模块
+│   │   ├── ActivityLogger.js
+│   │   ├── SafetyChecker.js
+│   │   └── UndoManager.js
+│   ├── stores/              # Pinia 状态管理
+│   │   ├── index.js
+│   │   ├── logs.js
+│   │   ├── settings.js
+│   │   ├── terminal.js
+│   │   └── undo.js
+│   ├── tools/               # CLI 工具相关
+│   └── types/               # TypeScript 类型定义
+│
+├── src-tauri/               # Tauri (Rust) 后端
+│   ├── Cargo.toml           # Rust 项目配置
+│   ├── build.rs             # 构建脚本
+│   ├── tauri.conf.json      # Tauri 配置
+│   ├── capabilities/        # Tauri 权限配置
+│   ├── icons/               # 应用图标
+│   ├── gen/                 # 生成的代码
+│   ├── src/                 # Rust 源代码
+│   │   ├── main.rs          # 入口文件
+│   │   ├── lib.rs           # 库文件
+│   │   ├── terminal.rs      # 终端管理
+│   │   ├── task.rs          # 任务管理
+│   │   └── commands/        # Tauri 命令
+│   │       ├── executor.rs  # 命令执行
+│   │       ├── filesystem.rs # 文件系统
+│   │       └── terminal.rs  # 终端命令
+│   └── target/              # 编译输出目录
+│
+├── public/                  # 公共静态资源
+│
+├── tests/                   # 测试文件
+│   ├── components/          # 组件测试
+│   ├── integration/         # 集成测试
+│   ├── unit/                # 单元测试
+│   └── manual/              # 手动测试脚本
+│       ├── test-executor.sh
+│       ├── test-fixes.html
+│       ├── test-working-dir-actual.js
+│       └── test-working-dir.js
+│
+├── scripts/                 # 项目脚本
+│   ├── run.sh              # 运行脚本
+│   └── generate-icons.sh   # 图标生成脚本
+│
+├── docs/                    # 文档目录
+│   ├── README.md           # 文档说明
+│   ├── images/             # 文档图片
+│   │   └── icon.svg       # 项目图标
+│   └── archive/            # 归档文档
+│       ├── ai/             # AI 功能文档（已移除）
+│       ├── phases/         # 开发阶段报告
+│       ├── optimization/   # 优化记录
+│       ├── terminal/       # 终端实现细节
+│       └── legacy/         # 其他历史文档
+│
+└── node_modules/            # Node.js 依赖（git ignored）
+```
+
+## 🎯 目录说明
+
+### `/src` - 前端代码
+Vue 3 应用的源代码，使用 Composition API。
+
+### `/src-tauri` - 后端代码
+Tauri/Rust 后端，负责系统级操作和终端管理。
+
+### `/tests` - 测试
+- `components/` - Vue 组件测试
+- `integration/` - 集成测试
+- `unit/` - 单元测试
+- `manual/` - 手动测试脚本
+
+### `/scripts` - 工具脚本
+项目开发和部署相关的 Shell 脚本。
+
+### `/docs` - 文档
+- 核心文档在根目录
+- 历史文档在 `docs/archive/`
+- 图片资源在 `docs/images/`
+
+## 🚫 被忽略的目录
+
+以下目录不会被 git 追踪：
+- `node_modules/` - npm 依赖
+- `src-tauri/target/` - Rust 编译产物
+- `dist/` - 构建输出
+- `.DS_Store` - macOS 系统文件
+
+## 📝 命名规范
+
+### 文件命名
+- Vue 组件: `PascalCase.vue` (例如: `SettingsModal.vue`)
+- JavaScript: `camelCase.js` (例如: `useTheme.js`)
+- Rust: `snake_case.rs` (例如: `terminal.rs`)
+- 配置文件: `kebab-case.json` (例如: `tauri.conf.json`)
+
+### 目录命名
+- 小写 + 连字符: `src-tauri/`
+- 小写: `components/`, `stores/`
+
+## 🔄 构建流程
+
+1. **开发模式**
+   ```bash
+   npm run tauri dev
+   ```
+
+2. **生产构建**
+   ```bash
+   npm run tauri build
+   ```
+
+3. **前端预览**
+   ```bash
+   npm run dev
+   ```
+
+## 📦 依赖管理
+
+- **前端依赖**: `package.json`
+- **后端依赖**: `src-tauri/Cargo.toml`
+- **系统依赖**: Docker (可选)
+
+---
+
+**最后更新**: 2025-11-16

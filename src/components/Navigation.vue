@@ -40,15 +40,12 @@ const isGitPage = () => {
     <!-- 右侧按钮组 -->
     <div class="nav-right">
       <!-- Git 按钮 -->
-      <button
-        class="nav-btn git-btn"
-        :class="{ active: isGitPage() }"
-        title="Git 可视化"
-        @click="navigateToGit"
-      >
+      <button class="nav-btn git-btn" :class="{ active: isGitPage() }" title="Git 可视化" @click="navigateToGit">
         <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-          <path d="M9 1C4.58 1 1 4.58 1 9s3.58 8 8 8 8-3.58 8-8-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6s2.69-6 6-6 6 2.69 6 6-2.69 6-6 6z" fill="currentColor"/>
-          <path d="M9 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z" fill="currentColor"/>
+          <path
+            d="M9 1C4.58 1 1 4.58 1 9s3.58 8 8 8 8-3.58 8-8-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6s2.69-6 6-6 6 2.69 6 6-2.69 6-6 6z"
+            fill="currentColor" />
+          <path d="M9 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z" fill="currentColor" />
         </svg>
         <span class="btn-label">Git</span>
       </button>

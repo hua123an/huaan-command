@@ -1,0 +1,41 @@
+{
+  "name": "huaan-command",
+  "private": true,
+  "version": "1.2.0",
+  "description": "简化版终端工具 - 专注核心终端功能",
+  "author": "Huaan",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "tauri": "tauri",
+    "tauri:build": "tauri build",
+    "tauri:build:intel": "tauri build --target x86_64-apple-darwin",
+    "tauri:build:release": "tauri build --release",
+    "tauri:build:all": "tauri build --target universal-apple-darwin",
+    "lint": "eslint . --fix",
+    "format": "prettier --write \"src/**/*.{js,vue}\""
+  },
+  "dependencies": {
+    "@tauri-apps/api": "^2.9.0",
+    "@tauri-apps/plugin-opener": "^2.5.0",
+    "@xterm/addon-fit": "^0.10.0",
+    "@xterm/addon-web-links": "^0.11.0",
+    "@xterm/xterm": "^5.5.0",
+    "pinia": "^3.0.3",
+    "vue": "^3.5.22",
+    "vue-router": "^4.6.3"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2.9.4",
+    "@vitejs/plugin-vue": "^5.2.1",
+    "eslint": "^9.38.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-vue": "^10.5.1",
+    "prettier": "^3.6.2",
+    "terser": "^5.44.0",
+    "vite": "^6.0.3"
+  }
+}
